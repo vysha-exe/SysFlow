@@ -13,6 +13,12 @@ This starter includes:
 - MongoDB + Mongoose
 - NextAuth.js (credentials + Google)
 
+## Bundler (Webpack, not Turbopack)
+
+`npm run dev` and `npm run build` use **Webpack** (`next dev --webpack` / `next build --webpack`). Next.js 16 defaults dev to Turbopack; on Windows, Turbopack can hit junction/symlink errors under `.next`. Webpack is the stable alternative here.
+
+If PowerShell blocks `npm` scripts, use `npm.cmd` (e.g. `npm.cmd install`).
+
 ## Run Locally
 
 1. Install dependencies:
@@ -20,7 +26,7 @@ This starter includes:
 2. Configure environment:
    - Copy `.env.example` to `.env.local`
    - Set:
-     - `MONGODB_URI`
+     - **`MONGODB_URI`** — **must match** `backend/.env` (or your Atlas URI). Signup/login write to Mongo from **Next.js API routes** on the frontend, not from the Express server, so the URI is required **here** too.
      - `NEXTAUTH_SECRET`
      - `NEXTAUTH_URL`
      - `GOOGLE_CLIENT_ID`

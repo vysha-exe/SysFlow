@@ -11,7 +11,7 @@ This repository is split into:
 1. `cd frontend`
 2. `npm install`
 3. Copy `.env.example` to `.env.local`
-4. `npm run dev`
+4. `npm run dev` (uses **Webpack**, not Turbopack — see `frontend/README.md`)
 
 ### Backend
 1. `cd backend`

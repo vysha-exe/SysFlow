@@ -16,8 +16,18 @@
 - `iconUrl`
 - timestamps
 
+### `headmates`
+- `systemId` → `systems`
+- `name`, `pronouns`, `description`, `customFields`, `privacyLevel`, `iconUrl`
+- timestamps
+
+### `frontsessions`
+- `systemId` → `systems`
+- `headmateIds[]` (co-front support)
+- `startedAt`, `endedAt` (`null` = active session)
+- `note` (optional)
+- timestamps
+
 ### Planned Collections
-- `headmates`
-- `frontSessions`
 - `journalEntries`
 - `privacySettings`
