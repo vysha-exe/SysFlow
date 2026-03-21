@@ -7,7 +7,7 @@ export default function JournalPage() {
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Journal</h1>
         <p className="text-sm text-muted-foreground">
-          MVP journal feed with timestamps, linked headmates, and privacy level.
+          MVP journal feed with timestamps and linked headmates.
         </p>
       </div>
 
@@ -23,14 +23,9 @@ export default function JournalPage() {
               key={entry.id}
               className="rounded-xl border border-border bg-card p-4 shadow-sm"
             >
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {formatDateTime(entry.createdAt)}
-                </p>
-                <p className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
-                  {entry.privacyLevel.replaceAll("_", " ")}
-                </p>
-              </div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {formatDateTime(entry.createdAt)}
+              </p>
               <p className="mt-2 text-sm text-card-foreground">{entry.content}</p>
               {names && (
                 <p className="mt-2 text-xs text-muted-foreground">By: {names}</p>

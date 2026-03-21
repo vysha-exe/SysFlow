@@ -13,7 +13,8 @@ const headmateSchema = new Schema(
     name: { type: String, required: true },
     pronouns: { type: String, default: "" },
     description: { type: String, default: "" },
-    customFields: { type: Schema.Types.Mixed, default: {} },
+    /** Ordered list of { key, value }; legacy plain objects are still supported at read time. */
+    customFields: { type: Schema.Types.Mixed, default: [] },
     privacyLevel: {
       type: String,
       enum: privacyLevel,

@@ -1,4 +1,3 @@
-
 # SysFlow
 
 **SysFlow** is a web app for **plural systems**—people who experience more than one sense of self or identity within one body—often in the context of **[dissociative identity disorder (DID)](https://www.isst-d.org/)** or **other specified dissociative disorder (OSDD)**.

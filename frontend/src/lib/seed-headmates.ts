@@ -6,22 +6,25 @@ const DEFAULT_HEADMATES = [
     name: "Alex",
     pronouns: "they/them",
     description: "Grounded and focused during planning tasks.",
-    customFields: { role: "organizer", energy: "steady" },
-    privacyLevel: "friends_only" as const,
+    customFields: [
+      { key: "role", value: "organizer" },
+      { key: "energy", value: "steady" },
+    ],
   },
   {
     name: "River",
     pronouns: "she/they",
     description: "Creative and social, often fronts in evenings.",
-    customFields: { role: "social", notes: "likes journaling" },
-    privacyLevel: "trusted_friends_only" as const,
+    customFields: [
+      { key: "role", value: "social" },
+      { key: "notes", value: "likes journaling" },
+    ],
   },
   {
     name: "Kai",
     pronouns: "he/him",
     description: "Protective and quick to assess risk.",
-    customFields: { role: "protector" },
-    privacyLevel: "private" as const,
+    customFields: [{ key: "role", value: "protector" }],
   },
 ];
 
@@ -36,7 +39,6 @@ export async function ensureDefaultHeadmates(systemId: mongoose.Types.ObjectId) 
       pronouns: h.pronouns,
       description: h.description,
       customFields: h.customFields,
-      privacyLevel: h.privacyLevel,
     })),
   );
 }

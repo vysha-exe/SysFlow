@@ -2,7 +2,7 @@ SysFlow MVP is a web-first DID/OSDD system management app.
 
 This starter includes:
 - System profile dashboard
-- Headmate profiles with privacy levels
+- Headmate profiles (create / edit / delete) + front controls
 - Front session timer/history scaffold
 - Journal feed scaffold
 - MongoDB-backed account system (email/password + Google OAuth)
@@ -37,7 +37,17 @@ If PowerShell blocks `npm` scripts, use `npm.cmd` (e.g. `npm.cmd install`).
 
 ## Routes
 - `/` dashboard + active front timer
-- `/headmates` headmate profile cards
+- `/headmates` headmate profiles (add, edit, delete) + who is fronting
+
+## Headmate API (authenticated)
+- `GET /api/headmates` — list
+- `POST /api/headmates` — create (`name`, `pronouns`, `description` max 750 chars, `customFields` as ordered `{ key, value }[]`, max 60)
+- `PATCH /api/headmates/[id]` — update (same fields, partial OK; legacy object-shaped `customFields` still accepted)
+- `DELETE /api/headmates/[id]` — delete (updates front sessions + history)
+
+## Headmate templates (per system)
+- `GET /api/headmate-templates` — `{ templates: [{ id, name, fieldLabels }], defaultTemplateId }`
+- `PUT /api/headmate-templates` — `{ templates, defaultTemplateId }` (max 20 templates; `fieldLabels` are title-only strings)
 - `/front-history` front session timeline
 - `/journal` journal entry feed
 - `/login` sign in

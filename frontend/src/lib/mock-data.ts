@@ -19,8 +19,10 @@ export const headmates: Headmate[] = [
     name: "Alex",
     pronouns: "they/them",
     description: "Grounded and focused during planning tasks.",
-    customFields: { role: "organizer", energy: "steady" },
-    privacyLevel: "friends_only",
+    customFields: [
+      { key: "role", value: "organizer" },
+      { key: "energy", value: "steady" },
+    ],
   },
   {
     id: "h_2",
@@ -28,8 +30,10 @@ export const headmates: Headmate[] = [
     name: "River",
     pronouns: "she/they",
     description: "Creative and social, often fronts in evenings.",
-    customFields: { role: "social", notes: "likes journaling" },
-    privacyLevel: "trusted_friends_only",
+    customFields: [
+      { key: "role", value: "social" },
+      { key: "notes", value: "likes journaling" },
+    ],
   },
   {
     id: "h_3",
@@ -37,8 +41,7 @@ export const headmates: Headmate[] = [
     name: "Kai",
     pronouns: "he/him",
     description: "Protective and quick to assess risk.",
-    customFields: { role: "protector" },
-    privacyLevel: "private",
+    customFields: [{ key: "role", value: "protector" }],
   },
 ];
 
@@ -79,7 +82,6 @@ export const journalEntries: JournalEntry[] = [
     content: "Morning check-in: stable mood, goals are clear.",
     createdAt: minutesAgo(15),
     headmateIds: ["h_1"],
-    privacyLevel: "private",
   },
   {
     id: "j_2",
@@ -87,6 +89,5 @@ export const journalEntries: JournalEntry[] = [
     content: "Shared reflection after therapy session.",
     createdAt: hoursAgo(8),
     headmateIds: ["h_2", "h_3"],
-    privacyLevel: "trusted_friends_only",
   },
 ];
