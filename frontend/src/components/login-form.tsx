@@ -41,21 +41,21 @@ export function LoginForm({ googleEnabled }: LoginFormProps) {
         type="button"
         onClick={() => signIn("google", { callbackUrl: "/" })}
         disabled={!googleEnabled}
-        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
       >
         Continue with Google
       </button>
       {!googleEnabled && (
-        <p className="text-xs text-amber-700">
+        <p className="text-xs text-warning-foreground">
           Google sign-in is not configured yet. Add `GOOGLE_CLIENT_ID` and
           `GOOGLE_CLIENT_SECRET` in `.env.local`.
         </p>
       )}
 
-      <div className="flex items-center gap-3 text-xs text-zinc-400">
-        <span className="h-px flex-1 bg-zinc-200" />
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
         OR
-        <span className="h-px flex-1 bg-zinc-200" />
+        <span className="h-px flex-1 bg-border" />
       </div>
 
       <form className="space-y-3" onSubmit={handleCredentialsLogin}>
@@ -63,7 +63,7 @@ export function LoginForm({ googleEnabled }: LoginFormProps) {
           type="email"
           required
           placeholder="Email"
-          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
@@ -71,15 +71,15 @@ export function LoginForm({ googleEnabled }: LoginFormProps) {
           type="password"
           required
           placeholder="Password"
-          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full rounded-md bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60"
+          className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
           {isLoading ? "Signing in..." : "Sign in"}
         </button>

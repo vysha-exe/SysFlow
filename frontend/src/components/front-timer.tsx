@@ -16,7 +16,7 @@ export function FrontTimer({ startIso }: FrontTimerProps) {
   }, []);
 
   return (
-    <span className="text-sm font-medium text-violet-700">
+    <span className="text-sm font-medium text-primary">
       Fronting for{" "}
       {formatDuration(startIso, new Date(currentTime).toISOString())}
     </span>

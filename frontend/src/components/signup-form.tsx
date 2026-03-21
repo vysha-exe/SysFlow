@@ -41,7 +41,7 @@ export function SignupForm() {
         type="text"
         required
         placeholder="Display name"
-        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
         value={name}
         onChange={(event) => setName(event.target.value)}
       />
@@ -49,7 +49,7 @@ export function SignupForm() {
         type="email"
         required
         placeholder="Email"
-        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
       />
@@ -58,15 +58,15 @@ export function SignupForm() {
         required
         minLength={8}
         placeholder="Password (min 8 chars)"
-        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
       />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-md bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60"
+        className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
       >
         {isLoading ? "Creating account..." : "Create account"}
       </button>

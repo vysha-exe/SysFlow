@@ -15,9 +15,9 @@ export default async function Home() {
   if (!ctx) {
     return (
       <section className="space-y-6">
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-semibold">SysFlow</h1>
-          <p className="mt-2 text-sm text-zinc-600">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h1 className="text-2xl font-semibold text-foreground">SysFlow</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             Sign in to see your system dashboard, headmates, and front tracking.
           </p>
         </div>
@@ -40,41 +40,43 @@ export default async function Home() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <p className="text-sm text-zinc-500">System</p>
-        <h1 className="text-2xl font-semibold">{system?.name ?? "Your system"}</h1>
-        <p className="mt-1 text-sm text-zinc-600">@{system?.username}</p>
-        <p className="mt-3 text-sm text-zinc-700">{system?.description}</p>
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <p className="text-sm text-muted-foreground">System</p>
+        <h1 className="text-2xl font-semibold text-foreground">
+          {system?.name ?? "Your system"}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">@{system?.username}</p>
+        <p className="mt-3 text-sm text-card-foreground">{system?.description}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold">Current Front</h2>
+        <article className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">Current Front</h2>
           {activeSession ? (
             <div className="mt-3 space-y-2">
               {hasFronters ? (
                 <>
-                  <p className="text-sm text-zinc-600">{currentFronters.join(", ")}</p>
+                  <p className="text-sm text-muted-foreground">{currentFronters.join(", ")}</p>
                   <FrontTimer startIso={activeSession.startedAt.toISOString()} />
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-zinc-600">No one fronting</p>
+                  <p className="text-sm text-muted-foreground">No one fronting</p>
                   <FrontTimer startIso={activeSession.startedAt.toISOString()} />
                 </>
               )}
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-muted-foreground">
                 Started {formatDateTime(activeSession.startedAt.toISOString())}
               </p>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-zinc-600">No active front session.</p>
+            <p className="mt-3 text-sm text-muted-foreground">No active front session.</p>
           )}
         </article>
 
-        <article className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold">Quick actions</h2>
-          <ul className="mt-3 space-y-2 text-sm text-zinc-700">
+        <article className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">Quick actions</h2>
+          <ul className="mt-3 space-y-2 text-sm text-card-foreground">
             <li>
               Go to <strong>Headmates</strong> to add to front, set as front, or remove
               from front.

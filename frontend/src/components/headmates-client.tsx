@@ -77,7 +77,7 @@ export function HeadmatesClient() {
 
   if (status === "loading" || loading) {
     return (
-      <p className="text-sm text-zinc-600" data-testid="headmates-loading">
+      <p className="text-sm text-muted-foreground" data-testid="headmates-loading">
         Loading headmates…
       </p>
     );
@@ -85,7 +85,7 @@ export function HeadmatesClient() {
 
   if (status === "unauthenticated") {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="rounded-xl border border-warning/40 bg-warning-bg p-4 text-sm text-warning-foreground">
         Sign in to load your headmates and manage who is fronting.
       </div>
     );
@@ -94,16 +94,18 @@ export function HeadmatesClient() {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      <p className="text-xs text-zinc-500">
-        Each change creates a <strong>new front session</strong> (logged in Front
-        history), including when <strong>no one</strong> is fronting. If someone is
-        already fronting, use <strong>Remove from front</strong> — add/set are hidden
-        for current fronters so we don&apos;t duplicate the same state.
+      <p className="text-xs text-muted-foreground">
+        Each change creates a <strong className="text-foreground">new front session</strong>{" "}
+        (logged in Front history), including when{" "}
+        <strong className="text-foreground">no one</strong> is fronting. If someone is
+        already fronting, use <strong className="text-foreground">Remove from front</strong>{" "}
+        — add/set are hidden for current fronters so we don&apos;t duplicate the same
+        state.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -115,27 +117,27 @@ export function HeadmatesClient() {
           return (
             <article
               key={headmate.id}
-              className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+              className="rounded-xl border border-border bg-card p-4 shadow-sm"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h2 className="text-lg font-semibold">{headmate.name}</h2>
+                  <h2 className="text-lg font-semibold text-foreground">{headmate.name}</h2>
                   {isFronting && (
-                    <span className="mt-1 inline-block rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-800">
+                    <span className="mt-1 inline-block rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
                       Fronting
                     </span>
                   )}
                 </div>
               </div>
-              <p className="mt-1 text-sm text-zinc-600">{headmate.pronouns}</p>
-              <p className="mt-2 text-sm text-zinc-700">{headmate.description}</p>
-              <p className="mt-3 text-xs uppercase tracking-wide text-zinc-500">
+              <p className="mt-1 text-sm text-muted-foreground">{headmate.pronouns}</p>
+              <p className="mt-2 text-sm text-card-foreground">{headmate.description}</p>
+              <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
                 Privacy: {headmate.privacyLevel.replaceAll("_", " ")}
               </p>
-              <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-zinc-600">
+              <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                 {Object.entries(headmate.customFields ?? {}).map(([key, value]) => (
                   <div key={key}>
-                    <dt className="font-medium">{key}</dt>
+                    <dt className="font-medium text-foreground">{key}</dt>
                     <dd>{value}</dd>
                   </div>
                 ))}
@@ -148,7 +150,7 @@ export function HeadmatesClient() {
                       type="button"
                       disabled={Boolean(busy)}
                       onClick={() => mutate("add", headmate.id)}
-                      className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+                      className="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50"
                     >
                       {spin("add") ? "…" : "Add to front"}
                     </button>
@@ -156,7 +158,7 @@ export function HeadmatesClient() {
                       type="button"
                       disabled={Boolean(busy)}
                       onClick={() => mutate("set", headmate.id)}
-                      className="rounded-md bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+                      className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                     >
                       {spin("set") ? "…" : "Set as front"}
                     </button>
@@ -167,7 +169,7 @@ export function HeadmatesClient() {
                     type="button"
                     disabled={Boolean(busy)}
                     onClick={() => mutate("remove", headmate.id)}
-                    className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-100 disabled:opacity-50"
+                    className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
                   >
                     {spin("remove") ? "…" : "Remove from front"}
                   </button>

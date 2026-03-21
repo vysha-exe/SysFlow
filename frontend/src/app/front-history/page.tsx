@@ -13,8 +13,8 @@ export default async function FrontHistoryPage() {
   if (!ctx) {
     return (
       <section className="space-y-4">
-        <h1 className="text-2xl font-semibold">Front History</h1>
-        <p className="text-sm text-zinc-600">Sign in to see your front sessions.</p>
+        <h1 className="text-2xl font-semibold text-foreground">Front History</h1>
+        <p className="text-sm text-muted-foreground">Sign in to see your front sessions.</p>
       </section>
     );
   }
@@ -34,15 +34,15 @@ export default async function FrontHistoryPage() {
   return (
     <section className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Front History</h1>
-        <p className="text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold text-foreground">Front History</h1>
+        <p className="text-sm text-muted-foreground">
           Session timeline with start/end and participant list.
         </p>
       </div>
 
       <div className="space-y-3">
         {sessions.length === 0 ? (
-          <p className="text-sm text-zinc-600">No front sessions yet.</p>
+          <p className="text-sm text-muted-foreground">No front sessions yet.</p>
         ) : (
           sessions.map((session) => {
             const names =
@@ -58,15 +58,15 @@ export default async function FrontHistoryPage() {
             return (
               <article
                 key={String(session._id)}
-                className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+                className="rounded-xl border border-border bg-card p-4 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h2 className="text-base font-semibold">{names}</h2>
-                    <p className="text-xs text-zinc-500">
+                    <h2 className="text-base font-semibold text-foreground">{names}</h2>
+                    <p className="text-xs text-muted-foreground">
                       Start: {formatDateTime(startIso)}
                     </p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-muted-foreground">
                       {ended && endIso
                         ? `End: ${formatDateTime(endIso)}`
                         : "Active session"}
@@ -75,18 +75,18 @@ export default async function FrontHistoryPage() {
                   <span
                     className={`rounded-full px-2 py-1 text-xs font-medium ${
                       ended
-                        ? "bg-zinc-100 text-zinc-700"
-                        : "bg-green-100 text-green-700"
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-primary/15 text-primary"
                     }`}
                   >
                     {ended ? "Completed" : "Active"}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-zinc-700">
+                <p className="mt-2 text-sm text-card-foreground">
                   Duration: {formatDuration(startIso, endIso)}
                 </p>
                 {session.note && (
-                  <p className="mt-2 text-sm text-zinc-600">{session.note}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{session.note}</p>
                 )}
               </article>
             );
