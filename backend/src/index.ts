@@ -1,0 +1,39 @@
+import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
+import mongoose from "mongoose";
+
+dotenv.config();
+
+const app = express();
+const port = Number(process.env.PORT ?? 4000);
+
+app.use(cors());
+app.use(express.json());
+
+app.get("/api/health", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "sysflow-backend",
+    time: new Date().toISOString(),
+  });
+});
+
+async function startServer() {
+  const mongoUri = process.env.MONGODB_URI;
+
+  if (!mongoUri) {
+    throw new Error("Missing MONGODB_URI in backend environment variables.");
+  }
+
+  await mongoose.connect(mongoUri);
+
+  app.listen(port, () => {
+    console.log(`Backend API running on http://localhost:${port}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error("Failed to start backend API:", error);
+  process.exit(1);
+});
