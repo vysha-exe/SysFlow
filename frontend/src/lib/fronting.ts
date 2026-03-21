@@ -1,4 +1,5 @@
 import { Types } from "mongoose";
+import { parseStoredCustomFields } from "@/lib/custom-fields";
 import { getCurrentSystem } from "@/lib/current-system";
 import { connectToDatabase } from "@/lib/mongodb";
 import { headmates as mockHeadmates } from "@/lib/mock-data";
@@ -18,7 +19,6 @@ async function ensureHeadmates(systemId: string) {
       pronouns: headmate.pronouns,
       description: headmate.description,
       customFields: headmate.customFields,
-      privacyLevel: headmate.privacyLevel,
     })),
   );
 }
@@ -50,16 +50,7 @@ export async function getFrontStateForCurrentSystem() {
       name: headmate.name as string,
       pronouns: headmate.pronouns as string,
       description: headmate.description as string,
-      customFields: Object.fromEntries(
-        headmate.customFields instanceof Map
-          ? headmate.customFields.entries()
-          : Object.entries((headmate.customFields as Record<string, string>) ?? {}),
-      ),
-      privacyLevel: headmate.privacyLevel as
-        | "public"
-        | "friends_only"
-        | "trusted_friends_only"
-        | "private",
+      customFields: parseStoredCustomFields(headmate.customFields),
     })),
     frontSessions: frontSessions.map((session) => ({
       id: String(session._id),

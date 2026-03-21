@@ -150,10 +150,12 @@ export function HeadmatesClient() {
     setError("");
     let hRes: Response;
     let aRes: Response;
+    let tRes: Response;
     try {
-      [hRes, aRes] = await Promise.all([
+      [hRes, aRes, tRes] = await Promise.all([
         fetchWithTimeout("/api/headmates", { credentials: "include" }),
         fetchWithTimeout("/api/front/active", { credentials: "include" }),
+        fetchWithTimeout("/api/headmate-templates", { credentials: "include" }),
       ]);
     } catch (e) {
       const aborted = e instanceof Error && e.name === "AbortError";
