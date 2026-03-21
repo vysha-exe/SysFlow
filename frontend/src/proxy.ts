@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { isAuthBypassEnabled } from "@/lib/auth-bypass";
 
 export async function proxy(request: NextRequest) {
-  if (process.env.DEV_BYPASS_AUTH === "true") {
+  if (isAuthBypassEnabled()) {
     return NextResponse.next();
   }
 
@@ -22,5 +23,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/headmates", "/front-history", "/journal"],
+  matcher: ["/", "/headmates/:path*", "/front-history/:path*", "/journal/:path*"],
 };

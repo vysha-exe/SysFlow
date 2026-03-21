@@ -2,6 +2,14 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+/** Fail fast instead of hanging the browser for minutes when Mongo is down or unreachable. */
+const MONGO_OPTIONS: mongoose.ConnectOptions = {
+  serverSelectionTimeoutMS: 8_000,
+  connectTimeoutMS: 8_000,
+  socketTimeoutMS: 45_000,
+  maxPoolSize: 10,
+};
+
 declare global {
   var mongooseConnection:
     | {
@@ -22,12 +30,22 @@ export async function connectToDatabase() {
     throw new Error("Missing MONGODB_URI in environment variables.");
   }
 
+  if (MONGODB_URI.includes("<") || MONGODB_URI.includes(">")) {
+    throw new Error(
+      "MONGODB_URI must not contain < or > around the username or password. Use: mongodb+srv://myuser:mypassword@cluster.../dbname?... (no angle brackets).",
+    );
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI);
+    cached.promise = mongoose.connect(MONGODB_URI, MONGO_OPTIONS).catch((err) => {
+      cached.promise = null;
+      cached.conn = null;
+      throw err;
+    });
   }
 
   cached.conn = await cached.promise;

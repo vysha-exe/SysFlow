@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
+import { isAuthBypassEnabled } from "@/lib/auth-bypass";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
@@ -11,10 +12,19 @@ const navItems = [
 ];
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+  const bypass = isAuthBypassEnabled();
+  const session = bypass ? null : await getServerSession(authOptions);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {bypass && (
+        <div className="border-b border-amber-500/40 bg-amber-500/15 px-4 py-1.5 text-center text-xs text-amber-950 dark:text-amber-100">
+          <strong>Dev mode:</strong> sign-in is disabled (
+          <code className="rounded bg-background/60 px-1">AUTH_ENABLED=false</code> or{" "}
+          <code className="rounded bg-background/60 px-1">DEV_BYPASS_AUTH=true</code>). Do not
+          use in production.
+        </div>
+      )}
       <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
@@ -34,7 +44,11 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               ))}
             </nav>
-            {session?.user ? (
+            {bypass ? (
+              <span className="rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
+                Signed in as dev (no account)
+              </span>
+            ) : session?.user ? (
               <>
                 <span className="hidden max-w-[10rem] truncate px-1 text-xs text-muted-foreground sm:inline">
                   {session.user.email}

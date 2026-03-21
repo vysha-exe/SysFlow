@@ -136,4 +136,6 @@ Health check (default): `http://localhost:4000/api/health`
 - **Bundler / PowerShell / env details:** `frontend/README.md`  
 - **Dissociation & DID (professional):** [ISST-D](https://www.isst-d.org/) — International Society for the Study of Trauma & Dissociation  
 
+## Deploy
 
+See **[DEPLOY.md](./DEPLOY.md)** for **Vercel** (frontend) and **Railway** (backend): env vars, root directories, and optional Docker.

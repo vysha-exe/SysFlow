@@ -14,6 +14,10 @@ node_modules/
 **/dist/
 **/.turbo/
 
+# Deploy tooling (local only)
+.vercel
+.railway
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

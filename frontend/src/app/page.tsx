@@ -1,4 +1,6 @@
+import { DbConnectionError } from "@/components/db-connection-error";
 import { FrontTimer } from "@/components/front-timer";
+import { isAuthBypassEnabled } from "@/lib/auth-bypass";
 import { getActiveFrontSession } from "@/lib/front-actions";
 import { connectToDatabase } from "@/lib/mongodb";
 import { ensureDefaultHeadmates } from "@/lib/seed-headmates";
@@ -10,9 +12,33 @@ import { SystemModel } from "@/models/system";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const ctx = await getSystemForSession();
+  let ctx;
+  try {
+    ctx = await getSystemForSession();
+  } catch (e) {
+    return (
+      <DbConnectionError
+        message={e instanceof Error ? e.message : "Database connection failed."}
+      />
+    );
+  }
 
   if (!ctx) {
+    if (isAuthBypassEnabled()) {
+      return (
+        <section className="space-y-6">
+          <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-6 shadow-sm">
+            <h1 className="text-xl font-semibold text-destructive">Dev bypass on, but no system context</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Auth is disabled, but the app could not load or create the dev user in MongoDB. Check{" "}
+              <code className="rounded bg-muted px-1">MONGODB_URI</code> in{" "}
+              <code className="rounded bg-muted px-1">.env.local</code>, Atlas IP access list, and restart{" "}
+              <code className="rounded bg-muted px-1">npm run dev</code>.
+            </p>
+          </div>
+        </section>
+      );
+    }
     return (
       <section className="space-y-6">
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
@@ -25,12 +51,26 @@ export default async function Home() {
     );
   }
 
-  await connectToDatabase();
-  await ensureDefaultHeadmates(ctx.systemId);
+  let system;
+  let activeSession;
+  let headmateDocs;
+  try {
+    await connectToDatabase();
+    await ensureDefaultHeadmates(ctx.systemId);
 
-  const system = await SystemModel.findById(ctx.systemId).lean();
-  const activeSession = await getActiveFrontSession(ctx.systemId);
-  const headmateDocs = await HeadmateModel.find({ systemId: ctx.systemId }).lean();
+    [system, activeSession, headmateDocs] = await Promise.all([
+      SystemModel.findById(ctx.systemId).lean(),
+      getActiveFrontSession(ctx.systemId),
+      HeadmateModel.find({ systemId: ctx.systemId }).lean(),
+    ]);
+  } catch (e) {
+    return (
+      <DbConnectionError
+        message={e instanceof Error ? e.message : "Database connection failed."}
+      />
+    );
+  }
+
   const nameFor = (id: string) =>
     headmateDocs.find((h) => String(h._id) === id)?.name ?? "?";
 

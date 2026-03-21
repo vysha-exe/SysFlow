@@ -1,10 +1,21 @@
 import { getServerSession } from "next-auth";
 import mongoose from "mongoose";
 import { authOptions } from "@/lib/auth-options";
+import { isAuthBypassEnabled } from "@/lib/auth-bypass";
+import { getCurrentSystem } from "@/lib/current-system";
 import { connectToDatabase } from "@/lib/mongodb";
 import { SystemModel } from "@/models/system";
 
 export async function getSystemForSession() {
+  if (isAuthBypassEnabled()) {
+    const system = await getCurrentSystem();
+    if (!system) return null;
+    return {
+      userId: String(system.ownerUserId),
+      systemId: system._id as mongoose.Types.ObjectId,
+    };
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
 

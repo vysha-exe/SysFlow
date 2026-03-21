@@ -12,41 +12,80 @@ type HeadmateRow = {
   privacyLevel: string;
 };
 
+const FETCH_TIMEOUT_MS = 15_000;
+
+async function fetchWithTimeout(input: string, init?: RequestInit) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export function HeadmatesClient() {
   const { status } = useSession();
   const [headmates, setHeadmates] = useState<HeadmateRow[]>([]);
   const [activeIds, setActiveIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  /** False after fetch when API returns 401 (real sign-in required). Bypass mode still returns 200 without a session. */
+  const [canUseApp, setCanUseApp] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (status !== "authenticated") {
+    // Do not wait for useSession() to finish — with AUTH_ENABLED=false the API works
+    // without a session; otherwise we can get stuck on "Loading headmates…".
+    setLoading(true);
+    setError("");
+    let hRes: Response;
+    let aRes: Response;
+    try {
+      [hRes, aRes] = await Promise.all([
+        fetchWithTimeout("/api/headmates", { credentials: "include" }),
+        fetchWithTimeout("/api/front/active", { credentials: "include" }),
+      ]);
+    } catch (e) {
+      const aborted = e instanceof Error && e.name === "AbortError";
+      setError(
+        aborted
+          ? "Request timed out. Check that MongoDB is running and MONGODB_URI is set in frontend/.env.local, then restart the dev server."
+          : "Could not reach the server.",
+      );
+      setCanUseApp(false);
       setLoading(false);
       return;
     }
-    setError("");
-    const [hRes, aRes] = await Promise.all([
-      fetch("/api/headmates", { credentials: "include" }),
-      fetch("/api/front/active", { credentials: "include" }),
-    ]);
+    if (hRes.status === 401) {
+      setHeadmates([]);
+      setActiveIds([]);
+      setCanUseApp(false);
+      setLoading(false);
+      return;
+    }
     if (!hRes.ok) {
       const d = await hRes.json().catch(() => ({}));
       setError((d.error as string) || "Could not load headmates.");
+      setCanUseApp(false);
       setLoading(false);
       return;
     }
     const hData = (await hRes.json()) as { headmates: HeadmateRow[] };
-    const aData = (await aRes.json()) as {
-      active: { headmateIds: string[] } | null;
-    };
+    let activeIdsNext: string[] = [];
+    if (aRes.ok) {
+      const aData = (await aRes.json()) as {
+        active: { headmateIds: string[] } | null;
+      };
+      activeIdsNext = aData.active?.headmateIds ?? [];
+    }
     setHeadmates(hData.headmates);
-    setActiveIds(aData.active?.headmateIds ?? []);
+    setActiveIds(activeIdsNext);
+    setCanUseApp(true);
     setLoading(false);
-  }, [status]);
+  }, []);
 
   useEffect(() => {
-    if (status === "loading") return;
     void load();
   }, [status, load]);
 
@@ -57,7 +96,7 @@ export function HeadmatesClient() {
     setBusy(`${action}:${headmateId}`);
     setError("");
     try {
-      const res = await fetch("/api/front", {
+      const res = await fetchWithTimeout("/api/front", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -75,7 +114,7 @@ export function HeadmatesClient() {
     }
   }
 
-  if (status === "loading" || loading) {
+  if (loading) {
     return (
       <p className="text-sm text-muted-foreground" data-testid="headmates-loading">
         Loading headmates…
@@ -83,10 +122,13 @@ export function HeadmatesClient() {
     );
   }
 
-  if (status === "unauthenticated") {
+  if (!canUseApp) {
     return (
       <div className="rounded-xl border border-warning/40 bg-warning-bg p-4 text-sm text-warning-foreground">
-        Sign in to load your headmates and manage who is fronting.
+        Sign in to load your headmates and manage who is fronting. (To skip sign-in locally, set{" "}
+        <code className="rounded bg-background/80 px-1">AUTH_ENABLED=false</code> in{" "}
+        <code className="rounded bg-background/80 px-1">.env.local</code> and restart the dev
+        server.)
       </div>
     );
   }

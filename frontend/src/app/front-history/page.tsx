@@ -1,3 +1,5 @@
+import { DbConnectionError } from "@/components/db-connection-error";
+import { isAuthBypassEnabled } from "@/lib/auth-bypass";
 import { connectToDatabase } from "@/lib/mongodb";
 import { ensureDefaultHeadmates } from "@/lib/seed-headmates";
 import { getSystemForSession } from "@/lib/system-for-user";
@@ -8,9 +10,29 @@ import { HeadmateModel } from "@/models/headmate";
 export const dynamic = "force-dynamic";
 
 export default async function FrontHistoryPage() {
-  const ctx = await getSystemForSession();
+  let ctx;
+  try {
+    ctx = await getSystemForSession();
+  } catch (e) {
+    return (
+      <DbConnectionError
+        message={e instanceof Error ? e.message : "Database connection failed."}
+      />
+    );
+  }
 
   if (!ctx) {
+    if (isAuthBypassEnabled()) {
+      return (
+        <section className="space-y-4">
+          <h1 className="text-2xl font-semibold text-foreground">Front History</h1>
+          <p className="text-sm text-destructive">
+            Dev bypass is on but the database did not return a system. Fix{" "}
+            <code className="rounded bg-muted px-1 text-foreground">MONGODB_URI</code> and restart the dev server.
+          </p>
+        </section>
+      );
+    }
     return (
       <section className="space-y-4">
         <h1 className="text-2xl font-semibold text-foreground">Front History</h1>
@@ -19,15 +41,26 @@ export default async function FrontHistoryPage() {
     );
   }
 
-  await connectToDatabase();
-  await ensureDefaultHeadmates(ctx.systemId);
+  let sessions;
+  let headmates;
+  try {
+    await connectToDatabase();
+    await ensureDefaultHeadmates(ctx.systemId);
 
-  const sessions = await FrontSessionModel.find({ systemId: ctx.systemId })
-    .sort({ startedAt: -1 })
-    .limit(50)
-    .lean();
-
-  const headmates = await HeadmateModel.find({ systemId: ctx.systemId }).lean();
+    [sessions, headmates] = await Promise.all([
+      FrontSessionModel.find({ systemId: ctx.systemId })
+        .sort({ startedAt: -1 })
+        .limit(50)
+        .lean(),
+      HeadmateModel.find({ systemId: ctx.systemId }).lean(),
+    ]);
+  } catch (e) {
+    return (
+      <DbConnectionError
+        message={e instanceof Error ? e.message : "Database connection failed."}
+      />
+    );
+  }
   const nameFor = (id: string) =>
     headmates.find((h) => String(h._id) === id)?.name ?? "?";
 
