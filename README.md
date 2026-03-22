@@ -2,7 +2,7 @@
 
 **SysFlow** is a web app for **plural systems**—people who experience more than one sense of self or identity within one body- often in the context of **[dissociative identity disorder (DID)](https://www.isst-d.org/)** or **other specified dissociative disorder (OSDD)**.
 
-It helps systems **track who is “fronting”** (present and in control), **manage headmate profiles**, and **keep a journal**—with room to grow.
+It helps systems **track who is “fronting”** (present and in control), **manage headmate profiles**, and **keep a journal**- with room to grow.
 
 ---
 
