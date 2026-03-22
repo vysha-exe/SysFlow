@@ -5,6 +5,7 @@ import {
 } from "@/lib/custom-fields";
 import { DESCRIPTION_MAX_CHARS } from "@/lib/display-limits";
 import { connectToDatabase } from "@/lib/mongodb";
+import { compareHeadmateNameAsc } from "@/lib/headmate-sort";
 import { ensureDefaultHeadmates } from "@/lib/seed-headmates";
 import { getSystemForSession } from "@/lib/system-for-user";
 import { HeadmateModel } from "@/models/headmate";
@@ -36,9 +37,8 @@ export async function GET() {
   await connectToDatabase();
   await ensureDefaultHeadmates(ctx.systemId);
 
-  const list = await HeadmateModel.find({ systemId: ctx.systemId })
-    .sort({ createdAt: 1 })
-    .lean();
+  const list = await HeadmateModel.find({ systemId: ctx.systemId }).lean();
+  list.sort(compareHeadmateNameAsc);
 
   const headmates = list.map(serializeHeadmate);
 

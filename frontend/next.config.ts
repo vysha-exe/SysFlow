@@ -17,6 +17,14 @@ const projectRoot = process.cwd();
 const nextConfig: NextConfig = {
   outputFileTracingRoot: projectRoot,
 
+  /**
+   * Next.js 16 expects an explicit Turbopack config when neither bundler is fully implied.
+   * We use **Webpack** via `next dev --webpack` / `next build --webpack` (see package.json).
+   * An empty object silences the docs warning and avoids some CI "Call retries were exceeded" failures.
+   * @see https://nextjs.org/docs/app/api-reference/next-config-js/turbopack
+   */
+  turbopack: {},
+
   webpack: (config) => {
     const nextThemes = path.join(projectRoot, "node_modules", "next-themes");
     config.resolve.alias = {

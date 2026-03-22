@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { parseStoredCustomFields } from "@/lib/custom-fields";
 import { getCurrentSystem } from "@/lib/current-system";
+import { compareHeadmateNameAsc } from "@/lib/headmate-sort";
 import { connectToDatabase } from "@/lib/mongodb";
 import { headmates as mockHeadmates } from "@/lib/mock-data";
 import { FrontSessionModel } from "@/models/front-session";
@@ -31,10 +32,12 @@ export async function getFrontStateForCurrentSystem() {
   const systemId = String(system._id);
   await ensureHeadmates(systemId);
 
-  const [headmates, frontSessions] = await Promise.all([
-    HeadmateModel.find({ systemId }).sort({ createdAt: 1 }).lean(),
+  const [headmatesRaw, frontSessions] = await Promise.all([
+    HeadmateModel.find({ systemId }).lean(),
     FrontSessionModel.find({ systemId }).sort({ startedAt: -1 }).lean(),
   ]);
+
+  const headmatesSorted = [...headmatesRaw].sort(compareHeadmateNameAsc);
 
   const activeSession = frontSessions.find((session) => !session.endedAt) ?? null;
 
@@ -45,7 +48,7 @@ export async function getFrontStateForCurrentSystem() {
       username: system.username as string,
       description: (system.description as string) ?? "",
     },
-    headmates: headmates.map((headmate) => ({
+    headmates: headmatesSorted.map((headmate) => ({
       id: String(headmate._id),
       name: headmate.name as string,
       pronouns: headmate.pronouns as string,

@@ -2,7 +2,7 @@
   "name": "sysflow",
   "private": true,
   "engines": {
-    "node": "20.x"
+    "node": "20.x || 22.x || 24.x"
   },
   "scripts": {
     "vercel-build": "cd frontend && npm ci && npm run build"

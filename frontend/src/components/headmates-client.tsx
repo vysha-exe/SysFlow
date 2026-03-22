@@ -10,11 +10,14 @@ import { TruncatedText } from "@/components/truncated-text";
 import type { CustomFieldEntry } from "@/lib/custom-fields";
 import {
   CUSTOM_FIELDS_CARD_VISIBLE_CAP,
+  CUSTOM_FIELDS_CARD_VISIBLE_CAP_COMPACT,
   CUSTOM_FIELDS_MAX_ROWS,
   visibleCustomFields,
 } from "@/lib/custom-fields";
 import {
   CUSTOM_FIELD_VALUE_PREVIEW_CHARS,
+  CUSTOM_FIELD_VALUE_PREVIEW_CHARS_COMPACT,
+  DESCRIPTION_CARD_PREVIEW_CHARS_COMPACT,
   DESCRIPTION_MAX_CHARS,
 } from "@/lib/display-limits";
 import type { HeadmateTemplateDto } from "@/lib/headmate-templates";
@@ -28,6 +31,76 @@ type HeadmateRow = {
 };
 
 const FETCH_TIMEOUT_MS = 15_000;
+
+const HEADMATES_VIEW_STORAGE_KEY = "sysflow-headmates-layout";
+type HeadmatesLayout = "list" | "cards";
+
+function HeadmateFrontActions({
+  headmateId,
+  isFronting,
+  busy,
+  onMutate,
+  size = "default",
+  className = "",
+}: {
+  headmateId: string;
+  isFronting: boolean;
+  busy: string | null;
+  onMutate: (action: "add" | "set" | "remove", id: string) => void;
+  size?: "default" | "compact";
+  className?: string;
+}) {
+  const spin = (a: "add" | "set" | "remove") => busy === `${a}:${headmateId}`;
+  const compact = size === "compact";
+  const neutral =
+    "rounded border border-border bg-card font-medium text-foreground hover:bg-muted disabled:opacity-50 " +
+    (compact ? "px-2 py-0.5 text-[11px]" : "px-3 py-1.5 text-xs");
+  const primary =
+    "rounded bg-primary font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 " +
+    (compact ? "px-2 py-0.5 text-[11px]" : "px-3 py-1.5 text-xs");
+  const danger =
+    "rounded border border-destructive/40 bg-destructive/10 font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50 " +
+    (compact ? "px-2 py-0.5 text-[11px]" : "px-3 py-1.5 text-xs");
+
+  return (
+    <div
+      className={`${
+        compact ? "flex flex-wrap gap-1" : "mt-4 flex flex-wrap gap-2"
+      } ${className}`.trim()}
+    >
+      {!isFronting && (
+        <>
+          <button
+            type="button"
+            disabled={Boolean(busy)}
+            onClick={() => onMutate("add", headmateId)}
+            className={neutral}
+          >
+            {spin("add") ? "…" : "Add to front"}
+          </button>
+          <button
+            type="button"
+            disabled={Boolean(busy)}
+            onClick={() => onMutate("set", headmateId)}
+            className={primary}
+          >
+            {spin("set") ? "…" : "Set as front"}
+          </button>
+        </>
+      )}
+      {isFronting && (
+        <button
+          type="button"
+          disabled={Boolean(busy)}
+          onClick={() => onMutate("remove", headmateId)}
+          className={danger}
+        >
+          {spin("remove") ? "…" : "Remove from front"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 async function fetchWithTimeout(input: string, init?: RequestInit) {
   const controller = new AbortController();
@@ -76,27 +149,44 @@ function reorderFieldRows(rows: FieldRow[], from: number, to: number): FieldRow[
   return next;
 }
 
-function HeadmateCardCustomFields({ entries }: { entries: CustomFieldEntry[] }) {
+function HeadmateCardCustomFields({
+  entries,
+  visibleCap = CUSTOM_FIELDS_CARD_VISIBLE_CAP,
+  valuePreviewChars = CUSTOM_FIELD_VALUE_PREVIEW_CHARS,
+  dense = false,
+}: {
+  entries: CustomFieldEntry[];
+  visibleCap?: number;
+  valuePreviewChars?: number;
+  dense?: boolean;
+}) {
   const visible = visibleCustomFields(entries);
   const [expanded, setExpanded] = useState(false);
-  const cap = CUSTOM_FIELDS_CARD_VISIBLE_CAP;
 
   if (visible.length === 0) return null;
 
-  const shown = expanded ? visible : visible.slice(0, cap);
-  const moreCount = visible.length - cap;
+  const shown = expanded ? visible : visible.slice(0, visibleCap);
+  const moreCount = visible.length - visibleCap;
 
   return (
-    <div className="mt-3">
-      <dl className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+    <div className={dense ? "mt-2" : "mt-3"}>
+      <dl
+        className={
+          dense
+            ? "grid grid-cols-1 gap-1 text-[11px] text-muted-foreground"
+            : "grid grid-cols-2 gap-2 text-xs text-muted-foreground"
+        }
+      >
         {shown.map((field, idx) => (
           <div key={`cf-${idx}`}>
-            <dt className="font-medium text-foreground">{field.key}</dt>
+            <dt className="truncate font-medium text-foreground">{field.key}</dt>
             <dd>
               <TruncatedText
                 text={field.value}
-                maxChars={CUSTOM_FIELD_VALUE_PREVIEW_CHARS}
-                textClassName="text-xs text-muted-foreground"
+                maxChars={valuePreviewChars}
+                textClassName={
+                  dense ? "text-[11px] text-muted-foreground" : "text-xs text-muted-foreground"
+                }
               />
             </dd>
           </div>
@@ -106,7 +196,11 @@ function HeadmateCardCustomFields({ entries }: { entries: CustomFieldEntry[] }) 
         <button
           type="button"
           onClick={() => setExpanded((e) => !e)}
-          className="mt-2 text-xs font-medium text-primary hover:underline"
+          className={
+            dense
+              ? "mt-1 inline text-[11px] font-medium text-primary underline-offset-2 hover:underline"
+              : "mt-1.5 inline text-xs font-medium text-primary underline-offset-2 hover:underline"
+          }
         >
           {expanded ? "Show less" : `Show ${moreCount} more field${moreCount === 1 ? "" : "s"}…`}
         </button>
@@ -142,6 +236,26 @@ export function HeadmatesClient() {
   );
   const [templatesPanelOpen, setTemplatesPanelOpen] = useState(false);
   const [savingTemplates, setSavingTemplates] = useState(false);
+
+  const [layout, setLayout] = useState<HeadmatesLayout>("cards");
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(HEADMATES_VIEW_STORAGE_KEY);
+      if (v === "list" || v === "cards") setLayout(v);
+    } catch {
+      /* private mode / SSR */
+    }
+  }, []);
+
+  const setLayoutPersist = useCallback((next: HeadmatesLayout) => {
+    setLayout(next);
+    try {
+      localStorage.setItem(HEADMATES_VIEW_STORAGE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const load = useCallback(async () => {
     // Do not wait for useSession() to finish — with AUTH_ENABLED=false the API works
@@ -420,6 +534,36 @@ export function HeadmatesClient() {
           state.
         </p>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <div
+            className="inline-flex rounded-lg border border-border bg-muted/50 p-0.5"
+            role="group"
+            aria-label="Headmates layout"
+          >
+            <button
+              type="button"
+              onClick={() => setLayoutPersist("list")}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
+                layout === "list"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={layout === "list"}
+            >
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setLayoutPersist("cards")}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
+                layout === "cards"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={layout === "cards"}
+            >
+              Cards
+            </button>
+          </div>
           <HeadmateTemplatesToolbarButton
             open={templatesPanelOpen}
             onClick={() => setTemplatesPanelOpen((o) => !o)}
@@ -449,92 +593,132 @@ export function HeadmatesClient() {
         />
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {headmates.map((headmate) => {
-          const isFronting = activeIds.includes(headmate.id);
-          const spin = (a: "add" | "set" | "remove") =>
-            busy === `${a}:${headmate.id}`;
-          const deleting = busy === `delete:${headmate.id}`;
-
-          return (
-            <article
-              key={headmate.id}
-              className="rounded-xl border border-border bg-card p-4 shadow-sm"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">{headmate.name}</h2>
-                  {isFronting && (
-                    <span className="mt-1 inline-block rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
-                      Fronting
-                    </span>
-                  )}
+      {layout === "list" ? (
+        <div className="space-y-1.5" role="list">
+          {headmates.map((headmate) => {
+            const isFronting = activeIds.includes(headmate.id);
+            const deleting = busy === `delete:${headmate.id}`;
+            return (
+              <div
+                key={headmate.id}
+                role="listitem"
+                className="flex flex-col gap-2 rounded-lg border border-border bg-card px-3 py-2 sm:flex-row sm:items-center sm:gap-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span className="font-semibold text-foreground">{headmate.name}</span>
+                    {isFronting && (
+                      <span className="shrink-0 rounded-full bg-accent px-1.5 py-px text-[10px] font-medium text-accent-foreground">
+                        Fronting
+                      </span>
+                    )}
+                  </div>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {headmate.pronouns.trim() ? headmate.pronouns : "—"}
+                  </p>
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  <button
-                    type="button"
-                    disabled={Boolean(busy)}
-                    onClick={() => openEdit(headmate)}
-                    className="rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    disabled={Boolean(busy)}
-                    onClick={() => deleteHeadmate(headmate.id, headmate.name)}
-                    className="rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
-                  >
-                    {deleting ? "…" : "Delete"}
-                  </button>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                  <HeadmateFrontActions
+                    headmateId={headmate.id}
+                    isFronting={isFronting}
+                    busy={busy}
+                    onMutate={mutate}
+                    size="compact"
+                    className="justify-start sm:justify-end"
+                  />
+                  <div className="flex justify-end gap-1 border-t border-border pt-2 sm:border-t-0 sm:border-l sm:pl-3 sm:pt-0">
+                    <button
+                      type="button"
+                      disabled={Boolean(busy)}
+                      onClick={() => openEdit(headmate)}
+                      className="rounded border border-border bg-card px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-50"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      disabled={Boolean(busy)}
+                      onClick={() => deleteHeadmate(headmate.id, headmate.name)}
+                      className="rounded border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
+                    >
+                      {deleting ? "…" : "Delete"}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">{headmate.pronouns}</p>
-              <div className="mt-2">
-                <TruncatedText
-                  text={headmate.description}
-                  maxChars={DESCRIPTION_MAX_CHARS}
-                  textClassName="text-sm text-card-foreground"
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+          {headmates.map((headmate) => {
+            const isFronting = activeIds.includes(headmate.id);
+            const deleting = busy === `delete:${headmate.id}`;
+
+            return (
+              <article
+                key={headmate.id}
+                className="flex h-full flex-col rounded-lg border border-border bg-card p-3 shadow-sm"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-1.5">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-sm font-semibold leading-tight text-foreground">
+                      {headmate.name}
+                    </h2>
+                    {isFronting && (
+                      <span className="mt-0.5 inline-block rounded-full bg-accent px-1.5 py-px text-[10px] font-medium text-accent-foreground">
+                        Fronting
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 gap-0.5">
+                    <button
+                      type="button"
+                      disabled={Boolean(busy)}
+                      onClick={() => openEdit(headmate)}
+                      className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px] font-medium text-foreground hover:bg-muted disabled:opacity-50"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      disabled={Boolean(busy)}
+                      onClick={() => deleteHeadmate(headmate.id, headmate.name)}
+                      className="rounded border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
+                    >
+                      {deleting ? "…" : "Delete"}
+                    </button>
+                  </div>
+                </div>
+                <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                  {headmate.pronouns.trim() ? headmate.pronouns : "—"}
+                </p>
+                <div className="mt-1.5 min-h-0 flex-1">
+                  <TruncatedText
+                    text={headmate.description}
+                    maxChars={DESCRIPTION_CARD_PREVIEW_CHARS_COMPACT}
+                    textClassName="text-xs text-card-foreground"
+                  />
+                  <HeadmateCardCustomFields
+                    entries={headmate.customFields ?? []}
+                    visibleCap={CUSTOM_FIELDS_CARD_VISIBLE_CAP_COMPACT}
+                    valuePreviewChars={CUSTOM_FIELD_VALUE_PREVIEW_CHARS_COMPACT}
+                    dense
+                  />
+                </div>
+                <HeadmateFrontActions
+                  headmateId={headmate.id}
+                  isFronting={isFronting}
+                  busy={busy}
+                  onMutate={mutate}
+                  size="compact"
+                  className="mt-auto justify-start border-t border-border/60 pt-2"
                 />
-              </div>
-              <HeadmateCardCustomFields entries={headmate.customFields ?? []} />
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {!isFronting && (
-                  <>
-                    <button
-                      type="button"
-                      disabled={Boolean(busy)}
-                      onClick={() => mutate("add", headmate.id)}
-                      className="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50"
-                    >
-                      {spin("add") ? "…" : "Add to front"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={Boolean(busy)}
-                      onClick={() => mutate("set", headmate.id)}
-                      className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                    >
-                      {spin("set") ? "…" : "Set as front"}
-                    </button>
-                  </>
-                )}
-                {isFronting && (
-                  <button
-                    type="button"
-                    disabled={Boolean(busy)}
-                    onClick={() => mutate("remove", headmate.id)}
-                    className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
-                  >
-                    {spin("remove") ? "…" : "Remove from front"}
-                  </button>
-                )}
-              </div>
-            </article>
-          );
-        })}
-      </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
 
       {editorOpen && (
         <div

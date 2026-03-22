@@ -50,8 +50,11 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
               </span>
             ) : session?.user ? (
               <>
-                <span className="hidden max-w-[10rem] truncate px-1 text-xs text-muted-foreground sm:inline">
-                  {session.user.email}
+                <span
+                  className="hidden max-w-[12rem] truncate px-1 text-xs text-muted-foreground sm:inline"
+                  title={session.user.email ?? undefined}
+                >
+                  {session.user.name?.trim() || session.user.email}
                 </span>
                 <Link
                   href="/api/auth/signout"

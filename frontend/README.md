@@ -41,7 +41,7 @@ If PowerShell blocks `npm` scripts, use `npm.cmd` (e.g. `npm.cmd install`).
 
 ## Headmate API (authenticated)
 - `GET /api/headmates` — list
-- `POST /api/headmates` — create (`name`, `pronouns`, `description` max 750 chars, `customFields` as ordered `{ key, value }[]`, max 60)
+- `POST /api/headmates` — create (`name`, `pronouns`, `description` max 10k chars, `customFields` as ordered `{ key, value }[]`, max 60)
 - `PATCH /api/headmates/[id]` — update (same fields, partial OK; legacy object-shaped `customFields` still accepted)
 - `DELETE /api/headmates/[id]` — delete (updates front sessions + history)
 

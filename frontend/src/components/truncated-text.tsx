@@ -28,19 +28,22 @@ export function TruncatedText({
 
   return (
     <div className={className}>
-      <p className={`whitespace-pre-wrap break-words ${textClassName}`}>
+      <span className={`whitespace-pre-wrap break-words ${textClassName}`}>
         {display}
         {needsTruncate && !expanded ? "…" : ""}
-      </p>
-      {needsTruncate && (
-        <button
-          type="button"
-          onClick={() => setExpanded((e) => !e)}
-          className="mt-1 text-xs font-medium text-primary hover:underline"
-        >
-          {expanded ? "Show less" : "Show more"}
-        </button>
-      )}
+        {needsTruncate ? (
+          <>
+            {" "}
+            <button
+              type="button"
+              onClick={() => setExpanded((e) => !e)}
+              className="inline align-baseline text-xs font-medium text-primary underline-offset-2 hover:underline"
+            >
+              {expanded ? "Show less" : "Show more"}
+            </button>
+          </>
+        ) : null}
+      </span>
     </div>
   );
 }

@@ -9,7 +9,10 @@ export type CustomFieldEntry = { key: string; value: string };
 export const CUSTOM_FIELDS_MAX_ROWS = 60;
 
 /** How many filled-in fields show on a headmate card before “show more”. */
-export const CUSTOM_FIELDS_CARD_VISIBLE_CAP = 6;
+export const CUSTOM_FIELDS_CARD_VISIBLE_CAP = 4;
+
+/** Compact grid cards: show fewer fields before “show more”. */
+export const CUSTOM_FIELDS_CARD_VISIBLE_CAP_COMPACT = 2;
 
 /** Fields shown on the card: both label and value must be non-empty after trim. */
 export function visibleCustomFields(entries: CustomFieldEntry[]): CustomFieldEntry[] {
