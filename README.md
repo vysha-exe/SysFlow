@@ -2,7 +2,7 @@
 
 **SysFlow** is a web app for **plural systems**—people who experience more than one sense of self or identity within one body—often in the context of **[dissociative identity disorder (DID)](https://www.isst-d.org/)** or **other specified dissociative disorder (OSDD)**.
 
-It helps systems **track who is “fronting”** (present and in control), **manage headmate profiles**, and **keep a lightweight journal**—with room to grow.
+It helps systems **track who is “fronting”** (present and in control), **manage headmate profiles**, and **keep a journal**—with room to grow.
 
 ---
 
@@ -40,14 +40,14 @@ SysFlow is built to respect that **the user decides** what to track and how to n
 | Area | Description |
 |------|-------------|
 | **Accounts** | Sign up / sign in with **email & password** or **Google** (OAuth). Data is tied to a **system** workspace in MongoDB. |
-| **Dashboard** | Overview and **active front** display with a **timer** for the current front session. |
-| **Headmates** | List and manage **headmate** profiles (Mongo-backed when logged in). |
-| **Front tracking** | **Add / set / remove** who is fronting; each meaningful change **ends** the previous session and **starts a new** one so you get a **history timeline**. |
-| **Front history** | Timeline of past front sessions. |
-| **Journal** | **Scaffold** UI for journal entries (mock/sample data in MVP; expandable to full CRUD + privacy rules). |
+| **Dashboard** | **System profile** (name, username, description), **current front** with **per–headmate timers** (including co-fronting), notes on the active session, and links to other areas. |
+| **Headmates** | **Create, edit, delete** headmate profiles (Mongo-backed). Set **who is fronting** from here; manage **custom field templates** per system (API + UI integration). |
+| **Front tracking** | **Add / set / remove** who is fronting; co-fronters can run on separate timers; changes end or split **intervals** so you get an accurate **history**. |
+| **Front history** | **Timeline** of front sessions and intervals, **editing** where supported, and **analytics** views driven by the front APIs. |
+| **Journal** | **Full CRUD** journal entries in MongoDB—title, body, optional headmate tags, **search/filter** in the UI. **Optional:** anchor a **SHA-256 fingerprint** of an entry on **Solana** (memo transaction); full text stays in the database. See `docs/journal-solana-anchor.md`. |
 | **Theme** | **Light / dark** mode and a **teal**-accented palette with semantic colors (e.g. warnings, success). |
 
-The **Express backend** in this repo is a **small health/API scaffold**; most **auth and plural data APIs** run inside the **Next.js** app (API routes + MongoDB).
+The **Express backend** in this repo is a **small health/Mongo scaffold**; **auth, headmates, front, journal, and Solana anchoring** run inside the **Next.js** app (API routes + MongoDB).
 
 ---
 
@@ -56,6 +56,10 @@ The **Express backend** in this repo is a **small health/API scaffold**; most **
 ```text
 SysFlow/
 ├── README.md                 ← You are here (workspace overview)
+├── DEPLOY.md                 ← Vercel / Railway deployment
+├── docs/
+│   ├── deployment-env-vars.md
+│   └── journal-solana-anchor.md   ← optional Solana hash anchoring
 ├── frontend/                 ← Main web app (Next.js)
 │   ├── README.md             ← Frontend: env, routes, bundler notes
 │   ├── mongodb/
@@ -66,31 +70,33 @@ SysFlow/
 │   │   │   ├── layout.tsx
 │   │   │   ├── login/
 │   │   │   ├── signup/
+│   │   │   ├── signout/
 │   │   │   ├── headmates/
 │   │   │   ├── front-history/
 │   │   │   ├── journal/
-│   │   │   └── api/          ← NextAuth, signup, headmates, front CRUD
-│   │   ├── components/       ← UI (app shell, headmates client, theme, forms, …)
-│   │   ├── lib/              ← Auth, Mongo, front actions, mocks, time helpers
-│   │   ├── models/           ← Mongoose models (user, system, headmate, front session)
+│   │   │   └── api/          ← NextAuth, signup, headmates, front, journal, journal/anchor, …
+│   │   ├── components/       ← UI (app shell, dashboard, headmates, journal, theme, …)
+│   │   ├── lib/              ← Auth, Mongo, front actions, journal/Solana helpers, …
+│   │   ├── models/           ← Mongoose models (user, system, headmate, front, journal, …)
 │   │   └── types/            ← TypeScript types / NextAuth extensions
 │   ├── .env.example
 │   └── package.json
-└── backend/                  ← Express + Mongo health scaffold
-    ├── src/
-    │   └── index.ts
-    ├── .env.example
-    └── package.json
+├── backend/                  ← Express + Mongo health scaffold
+│   ├── src/
+│   │   └── index.ts
+│   ├── .env.example
+│   └── package.json
+└── .gitignore
 ```
 
 ### Frontend (`frontend/`)
 
 | Path | Role |
 |------|------|
-| `src/app/` | Routes and **server/API route handlers** (`api/auth`, `api/headmates`, `api/front`, …). |
-| `src/components/` | Client and shared UI: layout shell, headmates UI, theme toggle, login/signup forms. |
-| `src/lib/` | **Mongo connection**, **NextAuth options**, **front session actions**, seed/mock helpers. |
-| `src/models/` | **Mongoose** schemas for users, systems, headmates, front sessions. |
+| `src/app/` | Routes and **server/API route handlers** (`api/auth`, `api/headmates`, `api/front`, `api/journal`, `api/journal/[id]/anchor`, …). |
+| `src/components/` | Client and shared UI: layout shell, dashboard, headmates, journal, theme, forms. |
+| `src/lib/` | **Mongo connection**, **NextAuth options**, **front session actions**, **journal + Solana memo** helpers. |
+| `src/models/` | **Mongoose** schemas for users, systems, headmates, front sessions, journal entries, etc. |
 
 ### Backend (`backend/`)
 
@@ -115,6 +121,7 @@ SysFlow/
    - **`MONGODB_URI`** — required for signup/login and plural data (Next.js talks to Mongo directly).  
    - **`NEXTAUTH_SECRET`**, **`NEXTAUTH_URL`**  
    - Optional: **`GOOGLE_CLIENT_ID`**, **`GOOGLE_CLIENT_SECRET`** for Google sign-in  
+   - Optional (journal hash anchoring): **`SOLANA_ANCHOR_SECRET_KEY`** (base64-encoded 64-byte keypair), **`SOLANA_CLUSTER`** (e.g. `devnet`), **`SOLANA_RPC_URL`** — see `docs/journal-solana-anchor.md`  
 4. `npm run dev` — uses **Webpack** (see `frontend/README.md` for why).  
 5. Open [http://localhost:3000](http://localhost:3000)
 
@@ -132,10 +139,11 @@ Health check (default): `http://localhost:4000/api/health`
 ## Documentation & links
 
 - **Mongo collections:** `frontend/mongodb/collections.md`  
+- **Journal hash anchoring (Solana):** `docs/journal-solana-anchor.md`  
 - **Bundler / PowerShell / env details:** `frontend/README.md`  
 - **Dissociation & DID (professional):** [ISST-D](https://www.isst-d.org/) — International Society for the Study of Trauma & Dissociation  
 
 ## Deploy
 
 - **[DEPLOY.md](./DEPLOY.md)** — step-by-step **Vercel** (Next.js: Root Directory **`frontend`**, `frontend/vercel.json`) and **Railway**, troubleshooting.  
-- **[docs/deployment-env-vars.md](./docs/deployment-env-vars.md)** — environment variable list for copy/paste into each platform.
+- **[docs/deployment-env-vars.md](./docs/deployment-env-vars.md)** — environment variable list for copy/paste into each platform (including optional Solana anchoring on Vercel).
