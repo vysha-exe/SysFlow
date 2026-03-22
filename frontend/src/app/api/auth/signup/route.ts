@@ -53,7 +53,12 @@ export async function POST(request: Request) {
       msg.includes("querySrv") ||
       msg.includes("whitelist") ||
       msg.includes("ECONNREFUSED") ||
-      msg.includes("ENOTFOUND");
+      msg.includes("ENOTFOUND") ||
+      msg.includes("ETIMEDOUT") ||
+      msg.includes("ESOCKETTIMEDOUT") ||
+      msg.includes("serverSelectionTimeout") ||
+      msg.includes("MongoNetworkError") ||
+      msg.includes("MongoServerSelectionError");
 
     return NextResponse.json(
       {

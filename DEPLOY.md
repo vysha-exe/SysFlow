@@ -84,6 +84,22 @@ Add in **Settings → Environment Variables** (at least **Production**; add **Pr
 
 Redeploy after changing env vars (**Deployments → … → Redeploy**).
 
+#### “Cannot reach the database” after deploy (signup / API)
+
+Serverless (Vercel) **does not read** your laptop’s `.env.local`. **`MONGODB_URI` must be set in the Vercel dashboard** for the environment you use (**Production** for your live URL; add **Preview** too if you test preview deployments).
+
+1. **Vercel** → your project → **Settings** → **Environment Variables**  
+   - Name: **`MONGODB_URI`** (exact spelling)  
+   - Value: full Atlas connection string (same as local, without `<` `>` around user/password)  
+   - Enable **Production** (and Preview if needed) → **Save**  
+   - **Redeploy** (env vars are not applied to old deployments until you redeploy).
+
+2. **Atlas** → **Network Access** → **Add IP Address** → **Allow access from anywhere** (`0.0.0.0/0`) for serverless. (Vercel has no single fixed outbound IP per project; restricting to “your IP only” breaks production.)
+
+3. **Atlas** → **Database** → user exists and password matches what’s in the URI. If the password has `@`, `#`, etc., **URL-encode** it in the URI.
+
+4. **Smoke test:** open `https://YOUR-PROJECT.vercel.app/api/health/mongo` — you should see `"ok": true` and a `readyState` of `1`. If `ok` is false, read the `error` field (often missing env or network).
+
 ### Step 7 — Google OAuth (if used)
 
 In Google Cloud Console → **Credentials** → your OAuth client:
