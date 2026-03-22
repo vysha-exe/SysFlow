@@ -10,12 +10,12 @@ import type { NextConfig } from "next";
 const projectRoot = process.cwd();
 
 /**
- * Bundler: Webpack is used for dev + build via npm scripts (`--webpack`).
- * Next.js 16 defaults to Turbopack for `next dev`; on Windows some setups hit
- * Turbopack junction/symlink errors under `.next/dev`. Webpack avoids that.
+ * `outputFileTracingRoot` fixes wrong workspace inference for `next-themes` locally
+ * (see webpack alias below). On **Vercel** it can break internal `.next` manifest paths
+ * (e.g. `routes-manifest-deterministic.json` ENOENT); skip there — `VERCEL=1` on builds.
  */
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: projectRoot,
+  ...(!process.env.VERCEL ? { outputFileTracingRoot: projectRoot } : {}),
 
   /**
    * Next.js 16 expects an explicit Turbopack config when neither bundler is fully implied.

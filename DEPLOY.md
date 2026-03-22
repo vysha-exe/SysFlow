@@ -65,6 +65,8 @@ Do **not** set a custom Output Directory for standard Next on Vercel.
 
 **If `npm ci` still fails:** open the deployment **Build Logs** — often the lockfile is missing from git (`frontend/package-lock.json` must be committed) or out of sync with `package.json`. Run `npm install` locally in `frontend/`, commit the updated lockfile, and push. As a last resort, set Install Command to `npm install` (less strict than `npm ci`).
 
+**If the build fails with** `ENOENT ... routes-manifest-deterministic.json` **(or similar under `.next/`):** `next.config.ts` skips `outputFileTracingRoot` when **`VERCEL=1`** (set automatically on Vercel). That option was for local `next-themes` resolution but can confuse serverless file tracing. Redeploy after pulling the latest `frontend/next.config.ts`.
+
 ### Step 6 — Environment variables
 
 Add in **Settings → Environment Variables** (at least **Production**; add **Preview** if you use preview URLs):
