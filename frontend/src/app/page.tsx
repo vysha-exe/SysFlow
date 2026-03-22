@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DbConnectionError } from "@/components/db-connection-error";
 import { DashboardCurrentFront } from "@/components/dashboard-current-front";
 import { SystemProfileEditor } from "@/components/system-profile-editor";
@@ -123,18 +124,54 @@ export default async function Home() {
 
         <article className="rounded-xl border border-border bg-card p-4 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">Quick actions</h2>
-          <ul className="mt-3 space-y-2 text-sm text-card-foreground">
-            <li>
-              Go to <strong>Headmates</strong> to add to front, set as front, or remove
-              from front.
+          <p className="mt-1 text-xs text-muted-foreground">
+            Shortcuts and how fronting works on this page vs. Headmates.
+          </p>
+          <ul className="mt-3 space-y-3 text-sm text-card-foreground">
+            <li className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+              <Link
+                href="/headmates"
+                className="font-semibold text-primary hover:underline"
+              >
+                Headmates
+              </Link>
+              <p className="mt-1 text-xs text-muted-foreground">
+                <strong className="text-foreground/90">View</strong> full profiles,{" "}
+                <strong className="text-foreground/90">Edit</strong> details (delete there
+                too), <strong className="text-foreground/90">Add to front</strong> /{" "}
+                <strong className="text-foreground/90">Set as front</strong> /{" "}
+                <strong className="text-foreground/90">Remove from front</strong>.
+              </p>
             </li>
-            <li>
-              <strong>Add / remove from front</strong> only starts or ends that
-              headmate&apos;s segment — other co-fronters keep their own timers.
+            <li className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+              <span className="font-semibold text-foreground">Current front (this page)</span>
+              <p className="mt-1 text-xs text-muted-foreground">
+                <strong className="text-foreground/90">Remove from front </strong> ends only
+                that person&apos;s segment — co-fronters keep their timers. Notes:{" "}
+                <strong className="text-foreground/90">Add note</strong> /{" "}
+                <strong className="text-foreground/90">Edit note</strong>.
+              </p>
             </li>
-            <li>
-              <strong>Set as front</strong> ends everyone else&apos;s segment. Empty front
-              and full history are in <strong>Front history</strong>.
+            <li className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+              <Link
+                href="/front-history"
+                className="font-semibold text-primary hover:underline"
+              >
+                Front history
+              </Link>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Timeline, edit intervals, and analytics.{" "}
+                <strong className="text-foreground/90">Set as front</strong> here is the
+                same as on Headmates — it ends everyone else&apos;s segment.
+              </p>
+            </li>
+            <li className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+              <Link href="/journal" className="font-semibold text-primary hover:underline">
+                Journal
+              </Link>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Private entries for your system; tag authors when you want.
+              </p>
             </li>
           </ul>
         </article>

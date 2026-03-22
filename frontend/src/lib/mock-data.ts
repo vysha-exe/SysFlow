@@ -13,7 +13,7 @@ export const headmates: Headmate[] = [
     systemId: "sys_1",
     name: "Alex",
     pronouns: "they/them",
-    description: "Grounded and focused during planning tasks.",
+    description: "",
     customFields: [
       { key: "role", value: "organizer" },
       { key: "energy", value: "steady" },
@@ -24,7 +24,7 @@ export const headmates: Headmate[] = [
     systemId: "sys_1",
     name: "River",
     pronouns: "she/they",
-    description: "Creative and social, often fronts in evenings.",
+    description: "",
     customFields: [
       { key: "role", value: "social" },
       { key: "notes", value: "likes journaling" },
@@ -35,7 +35,7 @@ export const headmates: Headmate[] = [
     systemId: "sys_1",
     name: "Kai",
     pronouns: "he/him",
-    description: "Protective and quick to assess risk.",
+    description: "",
     customFields: [{ key: "role", value: "protector" }],
   },
 ];

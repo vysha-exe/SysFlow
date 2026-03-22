@@ -5,16 +5,13 @@ const DEFAULT_HEADMATES = [
   {
     name: "Alex",
     pronouns: "they/them",
-    description: "Grounded and focused during planning tasks.",
-    customFields: [
-      { key: "role", value: "organizer" },
-      { key: "energy", value: "steady" },
-    ],
+    description: "",
+    customFields: [{ key: "role", value: "organizer" }],
   },
   {
     name: "River",
     pronouns: "she/they",
-    description: "Creative and social, often fronts in evenings.",
+    description: "",
     customFields: [
       { key: "role", value: "social" },
       { key: "notes", value: "likes journaling" },
@@ -23,7 +20,7 @@ const DEFAULT_HEADMATES = [
   {
     name: "Kai",
     pronouns: "he/him",
-    description: "Protective and quick to assess risk.",
+    description: "",
     customFields: [{ key: "role", value: "protector" }],
   },
 ];
