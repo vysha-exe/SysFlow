@@ -121,19 +121,22 @@ In Google Cloud Console → **Credentials** → your OAuth client:
 1. [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub repo**.
 2. Select the **same** `SysFlow` repository.
 
-### Step 2 — Service root directory
+### Step 2 — Service root directory (pick one)
 
-1. Open the **service** → **Settings**.
-2. **Root Directory** → set to **`backend`** (critical for a monorepo).
+**Option A (recommended):** Open the **service** → **Settings** → **Root Directory** → **`backend`**.  
+Railway/Nixpacks/Railpack will see **`backend/package.json`** and use its **`start`** and **`build`** scripts.
+
+**Option B (deploy from repo root):** Leave **Root Directory** empty or **`.`**.  
+The repo root **`package.json`** has **`build`** and **`start`** scripts that install/build **`backend/`** and run **`node backend/dist/index.js`**. **`railpack.json`** sets the same start command so **Railpack** does not fail with “No start command detected”.
 
 ### Step 3 — Build & start
 
-Railway picks up **`backend/railway.toml`**:
+If **root directory is `backend`**, Railway can use **`backend/railway.toml`**:
 
 - **Build:** `npm install && npm run build`
 - **Start:** `npm start` (runs `node dist/index.js`)
 
-**Alternative:** **Settings → Build → Builder** → **Dockerfile** → ensure the Dockerfile path is **`backend/Dockerfile`** (service root is still `backend`).
+**Docker:** **Settings → Build → Builder** → **Dockerfile** → path **`backend/Dockerfile`** (service root should still be **`backend`** when using that Dockerfile).
 
 ### Step 4 — Variables
 
