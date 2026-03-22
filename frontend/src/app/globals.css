@@ -1,55 +1,58 @@
 @import "tailwindcss";
 
-/* Light: white / black / teal + semantic states */
+/*
+ * Brand palette (logo — do not change hex):
+ * Light Blue #8FDDF8 | Dark Teal #269AA9 | Light Orange #FFD0B4 | Mid Orange #F7A06E | Dark Orange #A85B2F
+ */
+
+/* Light mode: warm off-whites, dark teal primary, light blue accents, orange for warnings */
 :root {
-  --background: #fafafa;
-  --foreground: #0a0a0a;
-  --card: #ffffff;
-  --card-foreground: #0a0a0a;
-  --muted: #f4f4f5;
-  --muted-foreground: #52525b;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #0d9488;
-  /* Teal primary */
-  --primary: #0d9488;
+  --background: #faf8f6;
+  --foreground: #292524;
+  --card: #fffcfa;
+  --card-foreground: #292524;
+  --muted: #f5f0eb;
+  --muted-foreground: #57534e;
+  --border: #e7e2dd;
+  --input: #e4dfda;
+  --ring: #269aa9;
+  --primary: #269aa9;
   --primary-foreground: #ffffff;
-  --accent: #ccfbf1;
-  --accent-foreground: #115e59;
-  /* Semantic extras */
+  --accent: #8fddf8;
+  --accent-foreground: #164e56;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --warning: #d97706;
-  --warning-bg: #fffbeb;
-  --warning-foreground: #92400e;
-  --success: #059669;
+  --warning: #f7a06e;
+  --warning-bg: #ffd0b4;
+  --warning-foreground: #a85b2f;
+  --success: #15803d;
   --success-bg: #ecfdf5;
-  --success-foreground: #065f46;
+  --success-foreground: #14532d;
 }
 
-/* Dark */
+/* Dark mode: neutral black / gray surfaces (brand primaries unchanged) */
 .dark {
-  --background: #0a0a0a;
+  --background: #171717;
   --foreground: #fafafa;
-  --card: #141414;
+  --card: #262626;
   --card-foreground: #fafafa;
-  --muted: #262626;
-  --muted-foreground: #a1a1aa;
-  --border: #27272a;
-  --input: #3f3f46;
-  --ring: #2dd4bf;
-  --primary: #2dd4bf;
-  --primary-foreground: #042f2e;
-  --accent: #134e4a;
-  --accent-foreground: #ccfbf1;
+  --muted: #404040;
+  --muted-foreground: #a3a3a3;
+  --border: #404040;
+  --input: #525252;
+  --ring: #8fddf8;
+  --primary: #8fddf8;
+  --primary-foreground: #0b1e22;
+  --accent: #269aa9;
+  --accent-foreground: #e8f9fc;
   --destructive: #f87171;
   --destructive-foreground: #450a0a;
-  --warning: #fbbf24;
-  --warning-bg: #422006;
-  --warning-foreground: #fde68a;
-  --success: #34d399;
-  --success-bg: #022c22;
-  --success-foreground: #a7f3d0;
+  --warning: #f7a06e;
+  --warning-bg: #2a2a2a;
+  --warning-foreground: #ffd0b4;
+  --success: #4ade80;
+  --success-bg: #262626;
+  --success-foreground: #bbf7d0;
 }
 
 @theme inline {
