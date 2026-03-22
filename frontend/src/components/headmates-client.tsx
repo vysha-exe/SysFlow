@@ -1,7 +1,9 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { FrontIntervalNoteModal } from "@/components/front-interval-note-modal";
+import { FrontTimer } from "@/components/front-timer";
 import {
   HeadmateTemplatesEditor,
   HeadmateTemplatesToolbarButton,
@@ -32,6 +34,9 @@ type HeadmateRow = {
 
 const FETCH_TIMEOUT_MS = 15_000;
 
+const HEADMATE_NOTE_BTN_CLASS =
+  "rounded border border-border bg-card font-medium text-foreground hover:bg-muted disabled:opacity-50 px-2 py-0.5 text-[11px]";
+
 const HEADMATES_VIEW_STORAGE_KEY = "sysflow-headmates-layout";
 type HeadmatesLayout = "list" | "cards";
 
@@ -42,6 +47,7 @@ function HeadmateFrontActions({
   onMutate,
   size = "default",
   className = "",
+  extraActions,
 }: {
   headmateId: string;
   isFronting: boolean;
@@ -49,6 +55,7 @@ function HeadmateFrontActions({
   onMutate: (action: "add" | "set" | "remove", id: string) => void;
   size?: "default" | "compact";
   className?: string;
+  extraActions?: ReactNode;
 }) {
   const spin = (a: "add" | "set" | "remove") => busy === `${a}:${headmateId}`;
   const compact = size === "compact";
@@ -98,6 +105,7 @@ function HeadmateFrontActions({
           {spin("remove") ? "…" : "Remove from front"}
         </button>
       )}
+      {extraActions}
     </div>
   );
 }
@@ -213,6 +221,14 @@ export function HeadmatesClient() {
   const { status } = useSession();
   const [headmates, setHeadmates] = useState<HeadmateRow[]>([]);
   const [activeIds, setActiveIds] = useState<string[]>([]);
+  const [activeIntervals, setActiveIntervals] = useState<
+    { id: string; headmateId: string | null; note: string; startedAt: string }[]
+  >([]);
+  const [frontNoteModal, setFrontNoteModal] = useState<{
+    intervalId: string;
+    name: string;
+    note: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   /** False after fetch when API returns 401 (real sign-in required). Bypass mode still returns 200 without a session. */
   const [canUseApp, setCanUseApp] = useState(false);
@@ -285,6 +301,7 @@ export function HeadmatesClient() {
     if (hRes.status === 401) {
       setHeadmates([]);
       setActiveIds([]);
+      setActiveIntervals([]);
       setCanUseApp(false);
       setLoading(false);
       return;
@@ -298,14 +315,32 @@ export function HeadmatesClient() {
     }
     const hData = (await hRes.json()) as { headmates: HeadmateRow[] };
     let activeIdsNext: string[] = [];
+    let activeIntervalsNext: {
+      id: string;
+      headmateId: string | null;
+      note: string;
+      startedAt: string;
+    }[] = [];
     if (aRes.ok) {
       const aData = (await aRes.json()) as {
-        active: { headmateIds: string[] } | null;
+        active: {
+          headmateIds: string[];
+          intervals?: {
+            id: string;
+            headmateId: string | null;
+            note: string;
+            startedAt: string;
+          }[];
+        } | null;
       };
       activeIdsNext = aData.active?.headmateIds ?? [];
+      activeIntervalsNext = aData.active?.intervals ?? [];
+    } else {
+      activeIntervalsNext = [];
     }
     setHeadmates(hData.headmates);
     setActiveIds(activeIdsNext);
+    setActiveIntervals(activeIntervalsNext);
     setCanUseApp(true);
     if (tRes.ok) {
       const tData = (await tRes.json()) as {
@@ -528,10 +563,10 @@ export function HeadmatesClient() {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          Each front change creates a <strong className="text-foreground">new session</strong>{" "}
-          (see Front history). If someone is already fronting, add/set are hidden — use{" "}
-          <strong className="text-foreground">Remove from front</strong> to avoid duplicate
-          state.
+          <strong className="text-foreground">Add to front</strong> starts a segment for that
+          headmate only (co-fronters keep their timers).{" "}
+          <strong className="text-foreground">Set as front</strong> ends other segments. See{" "}
+          <strong className="text-foreground">Front history</strong> for the full timeline.
         </p>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <div
@@ -593,11 +628,24 @@ export function HeadmatesClient() {
         />
       )}
 
+      {frontNoteModal ? (
+        <FrontIntervalNoteModal
+          intervalId={frontNoteModal.intervalId}
+          title={`Note — ${frontNoteModal.name}`}
+          initialNote={frontNoteModal.note}
+          onClose={() => setFrontNoteModal(null)}
+          onSaved={() => void load()}
+        />
+      ) : null}
+
       {layout === "list" ? (
         <div className="space-y-1.5" role="list">
           {headmates.map((headmate) => {
             const isFronting = activeIds.includes(headmate.id);
             const deleting = busy === `delete:${headmate.id}`;
+            const frontSeg = activeIntervals.find(
+              (i) => i.headmateId === headmate.id,
+            );
             return (
               <div
                 key={headmate.id}
@@ -616,6 +664,14 @@ export function HeadmatesClient() {
                   <p className="truncate text-xs text-muted-foreground">
                     {headmate.pronouns.trim() ? headmate.pronouns : "—"}
                   </p>
+                  {isFronting && frontSeg ? (
+                    <div className="mt-1">
+                      <FrontTimer
+                        startIso={frontSeg.startedAt}
+                        className="text-[10px] font-medium text-primary"
+                      />
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
                   <HeadmateFrontActions
@@ -625,6 +681,24 @@ export function HeadmatesClient() {
                     onMutate={mutate}
                     size="compact"
                     className="justify-start sm:justify-end"
+                    extraActions={
+                      isFronting && frontSeg ? (
+                        <button
+                          type="button"
+                          disabled={Boolean(busy)}
+                          onClick={() =>
+                            setFrontNoteModal({
+                              intervalId: frontSeg.id,
+                              name: headmate.name,
+                              note: frontSeg.note,
+                            })
+                          }
+                          className={HEADMATE_NOTE_BTN_CLASS}
+                        >
+                          {frontSeg.note.trim() ? "Edit note" : "Note"}
+                        </button>
+                      ) : null
+                    }
                   />
                   <div className="flex justify-end gap-1 border-t border-border pt-2 sm:border-t-0 sm:border-l sm:pl-3 sm:pt-0">
                     <button
@@ -654,6 +728,9 @@ export function HeadmatesClient() {
           {headmates.map((headmate) => {
             const isFronting = activeIds.includes(headmate.id);
             const deleting = busy === `delete:${headmate.id}`;
+            const frontSeg = activeIntervals.find(
+              (i) => i.headmateId === headmate.id,
+            );
 
             return (
               <article
@@ -670,6 +747,14 @@ export function HeadmatesClient() {
                         Fronting
                       </span>
                     )}
+                    {isFronting && frontSeg ? (
+                      <div className="mt-1">
+                        <FrontTimer
+                          startIso={frontSeg.startedAt}
+                          className="text-[10px] font-medium leading-snug text-primary"
+                        />
+                      </div>
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 gap-0.5">
                     <button
@@ -713,6 +798,24 @@ export function HeadmatesClient() {
                   onMutate={mutate}
                   size="compact"
                   className="mt-auto justify-start border-t border-border/60 pt-2"
+                  extraActions={
+                    isFronting && frontSeg ? (
+                      <button
+                        type="button"
+                        disabled={Boolean(busy)}
+                        onClick={() =>
+                          setFrontNoteModal({
+                            intervalId: frontSeg.id,
+                            name: headmate.name,
+                            note: frontSeg.note,
+                          })
+                        }
+                        className={HEADMATE_NOTE_BTN_CLASS}
+                      >
+                        {frontSeg.note.trim() ? "Edit note" : "Note"}
+                      </button>
+                    ) : null
+                  }
                 />
               </article>
             );

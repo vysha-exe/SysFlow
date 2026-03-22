@@ -1,9 +1,4 @@
-import type {
-  FrontSession,
-  Headmate,
-  JournalEntry,
-  SystemProfile,
-} from "@/types/domain";
+import type { FrontSession, Headmate, SystemProfile } from "@/types/domain";
 
 export const systemProfile: SystemProfile = {
   id: "sys_1",
@@ -72,22 +67,5 @@ export const frontSessions: FrontSession[] = [
     headmateIds: ["h_2"],
     startedAt: hoursAgo(27),
     endedAt: hoursAgo(25),
-  },
-];
-
-export const journalEntries: JournalEntry[] = [
-  {
-    id: "j_1",
-    systemId: "sys_1",
-    content: "Morning check-in: stable mood, goals are clear.",
-    createdAt: minutesAgo(15),
-    headmateIds: ["h_1"],
-  },
-  {
-    id: "j_2",
-    systemId: "sys_1",
-    content: "Shared reflection after therapy session.",
-    createdAt: hoursAgo(8),
-    headmateIds: ["h_2", "h_3"],
   },
 ];

@@ -1,10 +1,19 @@
 import { Types } from "mongoose";
+import {
+  addToFront,
+  getActiveFrontSession,
+  removeFromFront,
+  setAsFront,
+} from "@/lib/front-actions";
+import { ensureFrontIntervalsMigrated } from "@/lib/front-interval-migrate";
+import { groupIntervalsToSessions } from "@/lib/group-front-intervals";
 import { parseStoredCustomFields } from "@/lib/custom-fields";
+import { getSystemNameBase } from "@/lib/system-display-name";
 import { getCurrentSystem } from "@/lib/current-system";
 import { compareHeadmateNameAsc } from "@/lib/headmate-sort";
 import { connectToDatabase } from "@/lib/mongodb";
 import { headmates as mockHeadmates } from "@/lib/mock-data";
-import { FrontSessionModel } from "@/models/front-session";
+import { HeadmateFrontIntervalModel } from "@/models/headmate-front-interval";
 import { HeadmateModel } from "@/models/headmate";
 
 type FrontAction = "add" | "set" | "remove";
@@ -30,21 +39,23 @@ export async function getFrontStateForCurrentSystem() {
   if (!system) return null;
 
   const systemId = String(system._id);
+  const systemOid = new Types.ObjectId(systemId);
   await ensureHeadmates(systemId);
+  await ensureFrontIntervalsMigrated(systemOid);
 
-  const [headmatesRaw, frontSessions] = await Promise.all([
+  const [headmatesRaw, intervalsRaw] = await Promise.all([
     HeadmateModel.find({ systemId }).lean(),
-    FrontSessionModel.find({ systemId }).sort({ startedAt: -1 }).lean(),
+    HeadmateFrontIntervalModel.find({ systemId }).sort({ startedAt: -1 }).lean(),
   ]);
 
   const headmatesSorted = [...headmatesRaw].sort(compareHeadmateNameAsc);
-
-  const activeSession = frontSessions.find((session) => !session.endedAt) ?? null;
+  const sessions = groupIntervalsToSessions(intervalsRaw);
+  const activeLean = await getActiveFrontSession(systemOid);
 
   return {
     system: {
       id: String(system._id),
-      name: system.name as string,
+      name: getSystemNameBase(String(system.name ?? "")),
       username: system.username as string,
       description: (system.description as string) ?? "",
     },
@@ -55,18 +66,18 @@ export async function getFrontStateForCurrentSystem() {
       description: headmate.description as string,
       customFields: parseStoredCustomFields(headmate.customFields),
     })),
-    frontSessions: frontSessions.map((session) => ({
+    frontSessions: sessions.map((session) => ({
       id: String(session._id),
-      headmateIds: (session.headmateIds as Types.ObjectId[]).map((id) => String(id)),
-      startedAt: new Date(session.startedAt as Date).toISOString(),
-      endedAt: session.endedAt ? new Date(session.endedAt as Date).toISOString() : undefined,
-      note: (session.note as string) || undefined,
+      headmateIds: session.headmateIds.map((id) => String(id)),
+      startedAt: session.startedAt.toISOString(),
+      endedAt: session.endedAt ? session.endedAt.toISOString() : undefined,
+      note: session.note || undefined,
     })),
-    activeSession: activeSession
+    activeSession: activeLean
       ? {
-          id: String(activeSession._id),
-          headmateIds: (activeSession.headmateIds as Types.ObjectId[]).map((id) => String(id)),
-          startedAt: new Date(activeSession.startedAt as Date).toISOString(),
+          id: String(activeLean._id),
+          headmateIds: activeLean.headmateIds.map((id) => String(id)),
+          startedAt: activeLean.startedAt.toISOString(),
         }
       : null,
   };
@@ -81,6 +92,7 @@ export async function applyFrontActionForCurrentSystem(
   if (!system) return null;
 
   const systemId = String(system._id);
+  const systemOid = new Types.ObjectId(systemId);
   await ensureHeadmates(systemId);
 
   const headmate = await HeadmateModel.findOne({ _id: headmateId, systemId }).lean();
@@ -88,61 +100,14 @@ export async function applyFrontActionForCurrentSystem(
     throw new Error("Headmate not found for this system.");
   }
 
-  const activeSession = await FrontSessionModel.findOne({
-    systemId,
-    endedAt: null,
-  }).sort({ startedAt: -1 });
-
-  const now = new Date();
-  const currentIds = activeSession
-    ? activeSession.headmateIds.map((id: Types.ObjectId) => String(id))
-    : [];
-  const alreadyFronting = currentIds.includes(headmateId);
+  const hid = new Types.ObjectId(headmateId);
 
   if (action === "add") {
-    if (!alreadyFronting) {
-      if (activeSession) {
-        activeSession.headmateIds = [...activeSession.headmateIds, new Types.ObjectId(headmateId)];
-        await activeSession.save();
-      } else {
-        await FrontSessionModel.create({
-          systemId,
-          headmateIds: [headmateId],
-          startedAt: now,
-          endedAt: null,
-        });
-      }
-    }
-  }
-
-  if (action === "set") {
-    if (!activeSession) {
-      await FrontSessionModel.create({
-        systemId,
-        headmateIds: [headmateId],
-        startedAt: now,
-        endedAt: null,
-      });
-    } else if (!(currentIds.length === 1 && currentIds[0] === headmateId)) {
-      activeSession.endedAt = now;
-      await activeSession.save();
-      await FrontSessionModel.create({
-        systemId,
-        headmateIds: [headmateId],
-        startedAt: now,
-        endedAt: null,
-      });
-    }
-  }
-
-  if (action === "remove" && activeSession && alreadyFronting) {
-    const remaining = currentIds.filter((id: string) => id !== headmateId);
-    if (remaining.length === 0) {
-      activeSession.endedAt = now;
-    } else {
-      activeSession.headmateIds = remaining.map((id: string) => new Types.ObjectId(id));
-    }
-    await activeSession.save();
+    await addToFront(systemOid, hid);
+  } else if (action === "set") {
+    await setAsFront(systemOid, hid);
+  } else if (action === "remove") {
+    await removeFromFront(systemOid, hid);
   }
 
   return getFrontStateForCurrentSystem();

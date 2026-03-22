@@ -84,9 +84,11 @@ export async function ensureUserSystem(userId: string, name: string, email: stri
         : await generateUniqueUsername(`${base}_${randomBytes(2).toString("hex")}`);
 
     try {
+      const displayBase = name.trim() || "SysFlow user";
       await SystemModel.create({
         ownerUserId: userId,
-        name: `${name}'s System`,
+        /** Short display name; UI shows `${name}'s System` (see `formatSystemTitle`). */
+        name: displayBase,
         username,
         description: "New SysFlow system profile.",
       });

@@ -1,3 +1,6 @@
+/** Fixed user when dev bypass is on (see `getCurrentSystem`). */
+export const DEV_BYPASS_USER_EMAIL = "dev-bypass@sysflow.local" as const;
+
 /**
  * When true, the app uses a local dev user/system and does not require NextAuth sign-in.
  * Set in `.env.local` (restart dev server after changing):

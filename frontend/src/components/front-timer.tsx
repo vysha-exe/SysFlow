@@ -5,9 +5,11 @@ import { formatDuration } from "@/lib/time";
 
 type FrontTimerProps = {
   startIso: string;
+  /** Optional text size / color (default: text-sm font-medium text-primary). */
+  className?: string;
 };
 
-export function FrontTimer({ startIso }: FrontTimerProps) {
+export function FrontTimer({ startIso, className }: FrontTimerProps) {
   const [currentTime, setCurrentTime] = useState(() => Date.now());
 
   useEffect(() => {
@@ -16,7 +18,7 @@ export function FrontTimer({ startIso }: FrontTimerProps) {
   }, []);
 
   return (
-    <span className="text-sm font-medium text-primary">
+    <span className={className ?? "text-sm font-medium text-primary"}>
       Fronting for{" "}
       {formatDuration(startIso, new Date(currentTime).toISOString())}
     </span>

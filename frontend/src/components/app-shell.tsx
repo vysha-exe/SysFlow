@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { getHeaderAccountDisplay } from "@/lib/header-account-display";
 import { isAuthBypassEnabled } from "@/lib/auth-bypass";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -14,7 +13,7 @@ const navItems = [
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const bypass = isAuthBypassEnabled();
-  const session = bypass ? null : await getServerSession(authOptions);
+  const headerAccount = await getHeaderAccountDisplay();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -56,20 +55,23 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               ))}
             </nav>
-            {bypass ? (
-              <span className="rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
-                Signed in as dev (no account)
+            {headerAccount.mode === "bypass" ? (
+              <span
+                className="max-w-[14rem] truncate rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground"
+                title={headerAccount.detail ?? undefined}
+              >
+                {headerAccount.primaryLabel}
               </span>
-            ) : session?.user ? (
+            ) : headerAccount.mode === "signed_in" ? (
               <>
                 <span
-                  className="hidden max-w-[12rem] truncate px-1 text-xs text-muted-foreground sm:inline"
-                  title={session.user.email ?? undefined}
+                  className="hidden max-w-[14rem] truncate px-1 text-xs text-muted-foreground sm:inline"
+                  title={headerAccount.detail ?? undefined}
                 >
-                  {session.user.name?.trim() || session.user.email}
+                  {headerAccount.primaryLabel}
                 </span>
                 <Link
-                  href="/api/auth/signout"
+                  href="/signout"
                   className="rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground hover:bg-muted"
                 >
                   Sign out

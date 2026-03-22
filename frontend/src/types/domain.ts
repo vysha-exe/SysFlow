@@ -32,6 +32,7 @@ export type FrontSession = {
 export type JournalEntry = {
   id: string;
   systemId: string;
+  title: string;
   content: string;
   createdAt: string;
   headmateIds: string[];

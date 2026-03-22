@@ -21,18 +21,43 @@ export function SignupForm() {
       body: JSON.stringify({ name, email, password }),
     });
 
-    const data = await response.json();
-    if (!response.ok) {
-      setError(data.error ?? "Unable to create account.");
+    let data: { error?: string; detail?: string } = {};
+    const text = await response.text();
+    try {
+      data = text ? (JSON.parse(text) as typeof data) : {};
+    } catch {
+      setError(
+        `Server error (${response.status}). If signup keeps failing, check the terminal for MongoDB errors.`,
+      );
       setIsLoading(false);
       return;
     }
 
-    await signIn("credentials", {
+    if (!response.ok) {
+      setError(
+        data.error ??
+          (data.detail ? `${data.detail}` : "Unable to create account."),
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    const signInResult = await signIn("credentials", {
       email,
       password,
       callbackUrl: "/",
+      redirect: false,
     });
+
+    if (signInResult?.error) {
+      setError(
+        "Account may be created, but sign-in failed. Try logging in manually.",
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    window.location.href = "/";
   }
 
   return (

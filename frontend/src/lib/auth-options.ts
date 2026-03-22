@@ -97,11 +97,27 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && token.userId) {
         session.user.id = token.userId as string;
+        // Keep session label in sync with `users.name` (same value as system profile display name).
+        try {
+          await connectToDatabase();
+          const dbUser = await UserModel.findById(token.userId as string)
+            .select("name email")
+            .lean();
+          if (dbUser?.name?.trim()) {
+            session.user.name = dbUser.name.trim();
+          }
+          if (dbUser?.email && !session.user.email) {
+            session.user.email = dbUser.email;
+          }
+        } catch {
+          // If Mongo is unavailable, keep name/email from the JWT.
+        }
       }
       return session;
     },
   },
   pages: {
     signIn: "/login",
+    signOut: "/signout",
   },
 };

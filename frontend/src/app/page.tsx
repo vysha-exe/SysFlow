@@ -1,11 +1,15 @@
 import { DbConnectionError } from "@/components/db-connection-error";
-import { FrontTimer } from "@/components/front-timer";
+import { DashboardCurrentFront } from "@/components/dashboard-current-front";
+import { SystemProfileEditor } from "@/components/system-profile-editor";
 import { isAuthBypassEnabled } from "@/lib/auth-bypass";
-import { getActiveFrontSession } from "@/lib/front-actions";
+import {
+  getActiveFrontSession,
+  getActiveOpenIntervals,
+} from "@/lib/front-actions";
 import { connectToDatabase } from "@/lib/mongodb";
 import { ensureDefaultHeadmates } from "@/lib/seed-headmates";
+import { getSystemNameBase } from "@/lib/system-display-name";
 import { getSystemForSession } from "@/lib/system-for-user";
-import { formatDateTime } from "@/lib/time";
 import { HeadmateModel } from "@/models/headmate";
 import { SystemModel } from "@/models/system";
 
@@ -75,43 +79,46 @@ export default async function Home() {
     headmateDocs.find((h) => String(h._id) === id)?.name ?? "?";
 
   const hmIds = activeSession?.headmateIds ?? [];
-  const hasFronters = hmIds.length > 0;
-  const currentFronters = hmIds.map((id: unknown) => nameFor(String(id)));
+  const openIntervals = activeSession
+    ? await getActiveOpenIntervals(ctx.systemId)
+    : [];
+  const fronters = hmIds.map((id: unknown) => ({
+    id: String(id),
+    name: nameFor(String(id)),
+  }));
+  const initialActive = activeSession
+    ? {
+        fronters,
+        intervals: openIntervals,
+      }
+    : null;
+
+  const systemInitial =
+    system && system._id
+      ? {
+          id: String(system._id),
+          name: getSystemNameBase(system.name ?? ""),
+          username: system.username ?? "",
+          description: system.description ?? "",
+        }
+      : null;
 
   return (
     <section className="space-y-6">
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <p className="text-sm text-muted-foreground">System</p>
-        <h1 className="text-2xl font-semibold text-foreground">
-          {system?.name ?? "Your system"}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">@{system?.username}</p>
-        <p className="mt-3 text-sm text-card-foreground">{system?.description}</p>
-      </div>
+      {systemInitial ? (
+        <SystemProfileEditor initial={systemInitial} />
+      ) : (
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <p className="text-sm text-muted-foreground">System</p>
+          <h1 className="text-2xl font-semibold text-foreground">Your system</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Could not load system profile.</p>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <article className="rounded-xl border border-border bg-card p-4 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">Current Front</h2>
-          {activeSession ? (
-            <div className="mt-3 space-y-2">
-              {hasFronters ? (
-                <>
-                  <p className="text-sm text-muted-foreground">{currentFronters.join(", ")}</p>
-                  <FrontTimer startIso={activeSession.startedAt.toISOString()} />
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground">No one fronting</p>
-                  <FrontTimer startIso={activeSession.startedAt.toISOString()} />
-                </>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Started {formatDateTime(activeSession.startedAt.toISOString())}
-              </p>
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-muted-foreground">No active front session.</p>
-          )}
+          <DashboardCurrentFront initialActive={initialActive} />
         </article>
 
         <article className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -122,12 +129,12 @@ export default async function Home() {
               from front.
             </li>
             <li>
-              Each change starts a <strong>new session</strong> and appears in{" "}
-              <strong>Front history</strong> (including when no one is fronting).
+              <strong>Add / remove from front</strong> only starts or ends that
+              headmate&apos;s segment — other co-fronters keep their own timers.
             </li>
             <li>
-              <strong>Add to front</strong> = co-front. <strong>Set as front</strong> =
-              solo front.
+              <strong>Set as front</strong> ends everyone else&apos;s segment. Empty front
+              and full history are in <strong>Front history</strong>.
             </li>
           </ul>
         </article>

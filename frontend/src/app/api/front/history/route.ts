@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { ensureFrontIntervalsMigrated } from "@/lib/front-interval-migrate";
 import { connectToDatabase } from "@/lib/mongodb";
 import { getSystemForSession } from "@/lib/system-for-user";
-import { FrontSessionModel } from "@/models/frontSession";
+import { HeadmateFrontIntervalModel } from "@/models/headmate-front-interval";
 
+/** Completed front intervals only (excludes open rows). */
 export async function GET() {
   const ctx = await getSystemForSession();
   if (!ctx) {
@@ -10,23 +12,23 @@ export async function GET() {
   }
 
   await connectToDatabase();
+  await ensureFrontIntervalsMigrated(ctx.systemId);
 
-  const sessions = await FrontSessionModel.find({
+  const rows = await HeadmateFrontIntervalModel.find({
     systemId: ctx.systemId,
     endedAt: { $ne: null },
   })
     .sort({ startedAt: -1 })
-    .limit(50)
+    .limit(100)
     .lean();
 
-  const items = sessions.map((s) => ({
-    id: String(s._id),
-    systemId: String(s.systemId),
-    headmateIds: s.headmateIds.map((id: unknown) => String(id)),
-    startedAt: s.startedAt.toISOString(),
-    endedAt: s.endedAt ? s.endedAt.toISOString() : null,
-    note: s.note,
+  const intervals = rows.map((r) => ({
+    id: String(r._id),
+    headmateId: r.headmateId ? String(r.headmateId) : null,
+    startedAt: r.startedAt.toISOString(),
+    endedAt: r.endedAt ? r.endedAt.toISOString() : null,
+    note: r.note ?? "",
   }));
 
-  return NextResponse.json({ sessions: items });
+  return NextResponse.json({ intervals });
 }

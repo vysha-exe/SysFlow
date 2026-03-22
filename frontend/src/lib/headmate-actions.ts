@@ -1,11 +1,13 @@
 import mongoose from "mongoose";
+import { removeFromFront } from "@/lib/front-actions";
+import { ensureFrontIntervalsMigrated } from "@/lib/front-interval-migrate";
+import { HeadmateFrontIntervalModel } from "@/models/headmate-front-interval";
 import { FrontSessionModel } from "@/models/frontSession";
 import { HeadmateModel } from "@/models/headmate";
-import { removeFromFront } from "@/lib/front-actions";
 
 /**
- * Deletes a headmate: removes them from front if needed, scrubs their id from
- * all front-session history rows, then deletes the document.
+ * Deletes a headmate: removes them from front if needed, removes their front
+ * interval history, scrubs legacy session rows, then deletes the document.
  */
 export async function deleteHeadmate(
   systemId: mongoose.Types.ObjectId,
@@ -16,13 +18,18 @@ export async function deleteHeadmate(
     throw new Error("Headmate not found for this system.");
   }
 
-  const active = await FrontSessionModel.findOne({ systemId, endedAt: null }).lean();
-  const onFront = active?.headmateIds?.some(
-    (id: unknown) => String(id) === String(headmateId),
-  );
-  if (onFront) {
+  await ensureFrontIntervalsMigrated(systemId);
+
+  const opens = await HeadmateFrontIntervalModel.find({
+    systemId,
+    endedAt: null,
+    headmateId,
+  }).lean();
+  if (opens.length > 0) {
     await removeFromFront(systemId, headmateId);
   }
+
+  await HeadmateFrontIntervalModel.deleteMany({ systemId, headmateId });
 
   await FrontSessionModel.updateMany(
     { systemId, headmateIds: headmateId },
