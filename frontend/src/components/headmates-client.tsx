@@ -254,6 +254,11 @@ export function HeadmatesClient() {
   const [savingTemplates, setSavingTemplates] = useState(false);
 
   const [layout, setLayout] = useState<HeadmatesLayout>("cards");
+  const [viewHeadmate, setViewHeadmate] = useState<HeadmateRow | null>(null);
+  const [pendingDeleteHeadmate, setPendingDeleteHeadmate] = useState<{
+    id: string;
+    displayName: string;
+  } | null>(null);
 
   useEffect(() => {
     try {
@@ -272,6 +277,38 @@ export function HeadmatesClient() {
       /* ignore */
     }
   }, []);
+
+  const closeView = useCallback(() => {
+    setViewHeadmate(null);
+  }, []);
+
+  const viewFrontSeg =
+    viewHeadmate == null
+      ? null
+      : (activeIntervals.find((i) => i.headmateId === viewHeadmate.id) ?? null);
+
+  useEffect(() => {
+    if (!viewHeadmate) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") closeView();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [viewHeadmate, closeView]);
+
+  const closeDeleteConfirm = useCallback(() => {
+    if (busy?.startsWith("delete:")) return;
+    setPendingDeleteHeadmate(null);
+  }, [busy]);
+
+  useEffect(() => {
+    if (!pendingDeleteHeadmate) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") closeDeleteConfirm();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [pendingDeleteHeadmate, closeDeleteConfirm]);
 
   const load = useCallback(async () => {
     // Do not wait for useSession() to finish — with AUTH_ENABLED=false the API works
@@ -480,14 +517,8 @@ export function HeadmatesClient() {
     }
   }
 
-  async function deleteHeadmate(id: string, displayName: string) {
-    if (
-      !window.confirm(
-        `Delete “${displayName}”? This cannot be undone. They will be removed from front history references.`,
-      )
-    ) {
-      return;
-    }
+  /** Server delete only — confirm in UI before calling. */
+  async function performHeadmateDelete(id: string): Promise<boolean> {
     setBusy(`delete:${id}`);
     setError("");
     try {
@@ -500,11 +531,26 @@ export function HeadmatesClient() {
         throw new Error((data.error as string) || "Could not delete.");
       }
       await load();
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
+      return false;
     } finally {
       setBusy(null);
     }
+  }
+
+  function confirmDeleteHeadmate() {
+    if (!pendingDeleteHeadmate) return;
+    const { id } = pendingDeleteHeadmate;
+    void (async () => {
+      const ok = await performHeadmateDelete(id);
+      setPendingDeleteHeadmate(null);
+      if (ok) {
+        closeEditor();
+        setViewHeadmate((v) => (v?.id === id ? null : v));
+      }
+    })();
   }
 
   async function mutate(
@@ -555,6 +601,59 @@ export function HeadmatesClient() {
 
   return (
     <div className="space-y-4">
+      {pendingDeleteHeadmate ? (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="headmate-delete-title"
+          aria-describedby="headmate-delete-desc"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            aria-label="Cancel delete"
+            disabled={Boolean(busy?.startsWith("delete:"))}
+            onClick={closeDeleteConfirm}
+          />
+          <div className="relative z-10 w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-xl sm:p-6">
+            <h2
+              id="headmate-delete-title"
+              className="text-lg font-semibold text-foreground"
+            >
+              Delete headmate?
+            </h2>
+            <p id="headmate-delete-desc" className="mt-2 text-sm text-muted-foreground">
+              This will permanently remove{" "}
+              <span className="font-medium text-foreground">
+                {pendingDeleteHeadmate.displayName}
+              </span>
+              . They will be removed from front history references. This cannot be undone.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeDeleteConfirm}
+                disabled={Boolean(busy?.startsWith("delete:"))}
+                className="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteHeadmate}
+                disabled={Boolean(busy?.startsWith("delete:"))}
+                className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {busy === `delete:${pendingDeleteHeadmate.id}`
+                  ? "Deleting…"
+                  : "Delete headmate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {error && !editorOpen && (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
@@ -566,7 +665,9 @@ export function HeadmatesClient() {
           <strong className="text-foreground">Add to front</strong> starts a segment for that
           headmate only (co-fronters keep their timers).{" "}
           <strong className="text-foreground">Set as front</strong> ends other segments. See{" "}
-          <strong className="text-foreground">Front history</strong> for the full timeline.
+          <strong className="text-foreground">Front history</strong> for the full timeline. Use{" "}
+          <strong className="text-foreground">View</strong> for the full profile; delete is in{" "}
+          <strong className="text-foreground">Edit</strong>.
         </p>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <div
@@ -642,7 +743,6 @@ export function HeadmatesClient() {
         <div className="space-y-1.5" role="list">
           {headmates.map((headmate) => {
             const isFronting = activeIds.includes(headmate.id);
-            const deleting = busy === `delete:${headmate.id}`;
             const frontSeg = activeIntervals.find(
               (i) => i.headmateId === headmate.id,
             );
@@ -704,18 +804,18 @@ export function HeadmatesClient() {
                     <button
                       type="button"
                       disabled={Boolean(busy)}
-                      onClick={() => openEdit(headmate)}
+                      onClick={() => setViewHeadmate(headmate)}
                       className="rounded border border-border bg-card px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-50"
                     >
-                      Edit
+                      View
                     </button>
                     <button
                       type="button"
                       disabled={Boolean(busy)}
-                      onClick={() => deleteHeadmate(headmate.id, headmate.name)}
-                      className="rounded border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
+                      onClick={() => openEdit(headmate)}
+                      className="rounded border border-border bg-card px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-50"
                     >
-                      {deleting ? "…" : "Delete"}
+                      Edit
                     </button>
                   </div>
                 </div>
@@ -727,7 +827,6 @@ export function HeadmatesClient() {
         <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {headmates.map((headmate) => {
             const isFronting = activeIds.includes(headmate.id);
-            const deleting = busy === `delete:${headmate.id}`;
             const frontSeg = activeIntervals.find(
               (i) => i.headmateId === headmate.id,
             );
@@ -760,18 +859,18 @@ export function HeadmatesClient() {
                     <button
                       type="button"
                       disabled={Boolean(busy)}
-                      onClick={() => openEdit(headmate)}
+                      onClick={() => setViewHeadmate(headmate)}
                       className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px] font-medium text-foreground hover:bg-muted disabled:opacity-50"
                     >
-                      Edit
+                      View
                     </button>
                     <button
                       type="button"
                       disabled={Boolean(busy)}
-                      onClick={() => deleteHeadmate(headmate.id, headmate.name)}
-                      className="rounded border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
+                      onClick={() => openEdit(headmate)}
+                      className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px] font-medium text-foreground hover:bg-muted disabled:opacity-50"
                     >
-                      {deleting ? "…" : "Delete"}
+                      Edit
                     </button>
                   </div>
                 </div>
@@ -822,6 +921,92 @@ export function HeadmatesClient() {
           })}
         </div>
       )}
+
+      {viewHeadmate ? (
+        <div
+          className="fixed inset-0 z-[55] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="headmate-view-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            aria-label="Close"
+            onClick={closeView}
+          />
+          <div className="relative z-10 max-h-[min(90vh,800px)] w-full min-w-0 max-w-2xl overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-xl sm:p-6">
+            <h2
+              id="headmate-view-title"
+              className="break-words text-xl font-semibold text-foreground [overflow-wrap:anywhere]"
+            >
+              {viewHeadmate.name}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {viewHeadmate.pronouns.trim() ? viewHeadmate.pronouns : "No pronouns listed"}
+            </p>
+            {activeIds.includes(viewHeadmate.id) ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-b border-border pb-3">
+                <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
+                  Fronting now
+                </span>
+                {viewFrontSeg ? (
+                  <FrontTimer
+                    startIso={viewFrontSeg.startedAt}
+                    className="text-xs font-medium text-primary"
+                  />
+                ) : null}
+              </div>
+            ) : null}
+            <div className="mt-4 min-w-0 max-w-full border-t border-border pt-4">
+              {viewHeadmate.description.trim() ? (
+                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-card-foreground [overflow-wrap:anywhere]">
+                  {viewHeadmate.description}
+                </p>
+              ) : (
+                <p className="text-sm italic text-muted-foreground">No description.</p>
+              )}
+            </div>
+            {visibleCustomFields(viewHeadmate.customFields ?? []).length > 0 ? (
+              <div className="mt-6 border-t border-border pt-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Custom fields
+                </h3>
+                <dl className="mt-3 space-y-3">
+                  {visibleCustomFields(viewHeadmate.customFields ?? []).map((field, idx) => (
+                    <div key={`${field.key}-${idx}`}>
+                      <dt className="text-sm font-medium text-foreground">{field.key}</dt>
+                      <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-card-foreground [overflow-wrap:anywhere]">
+                        {field.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ) : null}
+            <div className="mt-6 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={closeView}
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const row = viewHeadmate;
+                  closeView();
+                  openEdit(row);
+                }}
+                className="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                Edit headmate
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {editorOpen && (
         <div
@@ -994,23 +1179,44 @@ export function HeadmatesClient() {
                 </button>
               </div>
             </div>
-            <div className="mt-6 flex justify-end gap-2 border-t border-border pt-4">
-              <button
-                type="button"
-                disabled={saving}
-                onClick={closeEditor}
-                className="rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => void saveHeadmate()}
-                className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-              >
-                {saving ? "Saving…" : editingId ? "Save" : "Create"}
-              </button>
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+              {editingId ? (
+                <button
+                  type="button"
+                  disabled={saving || Boolean(busy)}
+                  onClick={() => {
+                    const id = editingId;
+                    if (!id) return;
+                    setPendingDeleteHeadmate({
+                      id,
+                      displayName: formName.trim() || "this headmate",
+                    });
+                  }}
+                  className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
+                >
+                  Delete headmate
+                </button>
+              ) : (
+                <span className="min-w-0 flex-1" aria-hidden="true" />
+              )}
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={closeEditor}
+                  className="rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void saveHeadmate()}
+                  className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                >
+                  {saving ? "Saving…" : editingId ? "Save" : "Create"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

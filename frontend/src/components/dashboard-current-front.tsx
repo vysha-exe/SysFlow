@@ -32,6 +32,8 @@ export function DashboardCurrentFront({
     label: string;
     note: string;
   } | null>(null);
+  const [busyRemoveId, setBusyRemoveId] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState("");
 
   useEffect(() => {
     setActive(initialActive);
@@ -56,6 +58,28 @@ export function DashboardCurrentFront({
     });
   }, []);
 
+  async function handleRemoveFromFront(headmateId: string) {
+    setRemoveError("");
+    setBusyRemoveId(headmateId);
+    try {
+      const res = await fetch("/api/front", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "remove", headmateId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setRemoveError(data.error ?? "Could not remove from front.");
+        return;
+      }
+      await refresh();
+      router.refresh();
+    } finally {
+      setBusyRemoveId(null);
+    }
+  }
+
   if (!active) {
     return (
       <p className="mt-3 text-sm text-muted-foreground">No active front session.</p>
@@ -67,12 +91,19 @@ export function DashboardCurrentFront({
   return (
     <>
       <div className="mt-3 space-y-3">
+        {removeError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {removeError}
+          </p>
+        ) : null}
         {active.fronters.length > 0 ? (
           <ul className="space-y-3">
             {active.fronters.map((f) => {
               const intv = active.intervals.find((i) => i.headmateId === f.id);
               if (!intv) return null;
               const hasNote = intv.note.trim().length > 0;
+              const removing = busyRemoveId === f.id;
+              const removeDisabled = Boolean(busyRemoveId);
               return (
                 <li
                   key={f.id}
@@ -80,19 +111,30 @@ export function DashboardCurrentFront({
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <p className="text-sm font-semibold text-foreground">{f.name}</p>
-                    <button
-                      type="button"
-                      className="shrink-0 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted"
-                      onClick={() =>
-                        setNoteFor({
-                          intervalId: intv.id,
-                          label: f.name,
-                          note: intv.note,
-                        })
-                      }
-                    >
-                      {hasNote ? "Edit note" : "Add note"}
-                    </button>
+                    <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                      <button
+                        type="button"
+                        disabled={removeDisabled}
+                        className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-50"
+                        onClick={() =>
+                          setNoteFor({
+                            intervalId: intv.id,
+                            label: f.name,
+                            note: intv.note,
+                          })
+                        }
+                      >
+                        {hasNote ? "Edit note" : "Add note"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={removeDisabled}
+                        className="rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
+                        onClick={() => void handleRemoveFromFront(f.id)}
+                      >
+                        {removing ? "…" : "Remove from front"}
+                      </button>
+                    </div>
                   </div>
                   <div className="mt-1.5">
                     <FrontTimer startIso={intv.startedAt} />
