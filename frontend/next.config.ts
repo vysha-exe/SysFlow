@@ -31,6 +31,12 @@ const nextConfig: NextConfig = {
       ...(config.resolve.alias as Record<string, string | string[] | boolean>),
       "next-themes": nextThemes,
     };
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
     return config;
   },
 };

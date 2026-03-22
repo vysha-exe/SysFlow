@@ -9,6 +9,7 @@ import {
   JOURNAL_TITLE_MAX_CHARS,
 } from "@/lib/display-limits";
 import type { SerializedJournalEntry } from "@/lib/journal-serialize";
+import { solanaTxExplorerUrl } from "@/lib/solana-explorer";
 import { formatDateTime } from "@/lib/time";
 
 export type JournalHeadmateOption = { id: string; name: string };
@@ -77,6 +78,8 @@ export function JournalPageClient({ entries, headmates }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [anchorBusy, setAnchorBusy] = useState(false);
+  const [anchorError, setAnchorError] = useState("");
 
   const [viewEntry, setViewEntry] = useState<SerializedJournalEntry | null>(null);
   const [pendingDeleteEntry, setPendingDeleteEntry] =
@@ -244,6 +247,35 @@ export function JournalPageClient({ entries, headmates }: Props) {
     if (!pendingDeleteEntry) return;
     void executeDelete(pendingDeleteEntry.id);
   };
+
+  async function anchorEntry(entry: SerializedJournalEntry) {
+    setAnchorError("");
+    setAnchorBusy(true);
+    try {
+      const response = await fetch(`/api/journal/${entry.id}/anchor`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const text = await response.text();
+      let data: { error?: string; entry?: SerializedJournalEntry };
+      try {
+        data = text ? (JSON.parse(text) as typeof data) : {};
+      } catch {
+        setAnchorError(`Server error (${response.status}).`);
+        return;
+      }
+      if (!response.ok) {
+        setAnchorError(data.error ?? "Could not anchor entry.");
+        return;
+      }
+      if (data.entry) {
+        setViewEntry(data.entry);
+      }
+      router.refresh();
+    } finally {
+      setAnchorBusy(false);
+    }
+  }
 
   const nameFor = (id: string) => headmates.find((h) => h.id === id)?.name ?? "?";
 
@@ -424,7 +456,17 @@ export function JournalPageClient({ entries, headmates }: Props) {
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <h3 className="break-words text-base font-semibold text-foreground">{fullTitle}</h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="break-words text-base font-semibold text-foreground">{fullTitle}</h3>
+                      {entry.anchor ? (
+                        <span
+                          className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
+                          title="SHA-256 of this entry was anchored on Solana"
+                        >
+                          Anchored
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="mt-0.5 text-xs uppercase tracking-wide text-muted-foreground">
                       {formatDateTime(entry.createdAt)}
                     </p>
@@ -516,6 +558,48 @@ export function JournalPageClient({ entries, headmates }: Props) {
                 {viewEntry.content}
               </p>
             </div>
+
+            <div className="mt-5 rounded-lg border border-border bg-muted/25 p-4">
+              <p className="text-sm font-medium text-foreground">Solana commitment (hash only)</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Stores a SHA-256 fingerprint of this entry in a memo transaction. Journal text is not
+                published on chain—only the hash. Editing the entry clears the anchor until you anchor
+                again.
+              </p>
+              {anchorError ? (
+                <p className="mt-2 text-xs text-destructive" role="alert">
+                  {anchorError}
+                </p>
+              ) : null}
+              {viewEntry.anchor ? (
+                <div className="mt-3 space-y-2 text-xs">
+                  <p className="font-mono text-[11px] leading-snug break-all text-muted-foreground">
+                    {viewEntry.anchor.hash}
+                  </p>
+                  <a
+                    href={solanaTxExplorerUrl(
+                      viewEntry.anchor.txSignature,
+                      viewEntry.anchor.cluster,
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    View on Solana Explorer ({viewEntry.anchor.cluster})
+                  </a>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy || anchorBusy}
+                  onClick={() => void anchorEntry(viewEntry)}
+                  className="mt-3 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
+                >
+                  {anchorBusy ? "Anchoring…" : "Anchor hash on Solana"}
+                </button>
+              )}
+            </div>
+
             <div className="mt-6 flex flex-wrap gap-2">
               <button
                 type="button"

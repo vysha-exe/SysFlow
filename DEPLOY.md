@@ -79,6 +79,9 @@ Add in **Settings → Environment Variables** (at least **Production**; add **Pr
 | `AUTH_ENABLED` | Optional | Omit or `true` in production |
 | `DEV_BYPASS_AUTH` | Optional | Set `false` or omit in production |
 | `MONGODB_DB_NAME` | Optional | Only if not using default `sysflow` |
+| `SOLANA_ANCHOR_SECRET_KEY` | Optional | Base64 **64-byte** keypair; funds **memo** txs for journal hash anchoring (see `docs/journal-solana-anchor.md`) |
+| `SOLANA_CLUSTER` | Optional | `devnet` (default), `testnet`, or `mainnet-beta` |
+| `SOLANA_RPC_URL` | Optional | Custom Solana RPC URL |
 
 Redeploy after changing env vars (**Deployments → … → Redeploy**).
 

@@ -7,6 +7,14 @@ const journalEntrySchema = new Schema(
     content: { type: String, required: true },
     /** Headmates credited as authors (optional). */
     headmateIds: [{ type: Schema.Types.ObjectId, ref: "Headmate" }],
+    /** Optional: SHA-256 commitment anchored on Solana (hash only; memo tx). Cleared when entry body changes. */
+    anchor: {
+      hash: { type: String },
+      txSignature: { type: String },
+      cluster: { type: String },
+      slot: { type: Number },
+      anchoredAt: { type: Date },
+    },
   },
   { timestamps: true },
 );

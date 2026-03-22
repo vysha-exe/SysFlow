@@ -67,20 +67,24 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: belongs.error }, { status: 400 });
   }
 
-  const existing = await JournalEntryModel.findOne({
-    _id: entryId,
-    systemId: ctx.systemId,
-  });
-  if (!existing) {
+  const updated = await JournalEntryModel.findOneAndUpdate(
+    { _id: entryId, systemId: ctx.systemId },
+    {
+      $set: {
+        title: titleParsed.title,
+        content,
+        headmateIds: parsed.ids,
+      },
+      /** New content invalidates any prior on-chain commitment. */
+      $unset: { anchor: 1 },
+    },
+    { new: true },
+  );
+  if (!updated) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
-  existing.title = titleParsed.title;
-  existing.content = content;
-  existing.headmateIds = parsed.ids;
-  await existing.save();
-
-  return NextResponse.json({ entry: serializeJournalEntry(existing.toObject()) });
+  return NextResponse.json({ entry: serializeJournalEntry(updated.toObject()) });
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
