@@ -76,8 +76,6 @@ Add in **Settings → Environment Variables** (at least **Production**; add **Pr
 | `MONGODB_URI` | Yes | Atlas SRV string |
 | `NEXTAUTH_SECRET` | Yes | e.g. `openssl rand -base64 32` — **required** for sign-in to work in production |
 | `NEXTAUTH_URL` | Yes | **Exact** public URL: `https://YOUR-PROJECT.vercel.app` (no trailing slash). Wrong/missing values often look like “nothing happens” after Sign in — cookies/JWT won’t be issued. |
-| `GOOGLE_CLIENT_ID` | If Google login | From Google Cloud Console |
-| `GOOGLE_CLIENT_SECRET` | If Google login | |
 | `AUTH_ENABLED` | Optional | Omit or `true` in production |
 | `DEV_BYPASS_AUTH` | Optional | Set `false` or omit in production |
 | `MONGODB_DB_NAME` | Optional | Only if not using default `sysflow` |
@@ -100,14 +98,7 @@ Serverless (Vercel) **does not read** your laptop’s `.env.local`. **`MONGODB_U
 
 4. **Smoke test:** open `https://YOUR-PROJECT.vercel.app/api/health/mongo` — you should see `"ok": true` and a `readyState` of `1`. If `ok` is false, read the `error` field (often missing env or network).
 
-### Step 7 — Google OAuth (if used)
-
-In Google Cloud Console → **Credentials** → your OAuth client:
-
-- **Authorized JavaScript origins:** `https://YOUR-PROJECT.vercel.app`
-- **Authorized redirect URIs:** `https://YOUR-PROJECT.vercel.app/api/auth/callback/google`
-
-### Step 8 — Fix “404 NOT_FOUND” on `*.vercel.app`
+### Step 7 — Fix “404 NOT_FOUND” on `*.vercel.app`
 
 1. Confirm **Root Directory** is **`frontend`** and the production build succeeded (green check).
 2. Set **`NEXTAUTH_URL`** to the **same** hostname users open in the browser.
@@ -169,8 +160,6 @@ Today, the **Next.js** app talks to **MongoDB** and its own **`/api/*`** routes.
 - [ ] `NEXTAUTH_URL` matches the live site URL exactly.
 - [ ] `DEV_BYPASS_AUTH` / `AUTH_ENABLED` are safe for production.
 - [ ] Atlas allows connections from Vercel (and Railway if used).
-- [ ] Google OAuth redirect URIs updated if using Google sign-in.
-
 ---
 
 ## 4. Quick reference

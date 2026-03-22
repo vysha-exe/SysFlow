@@ -3,11 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 
-type LoginFormProps = {
-  googleEnabled: boolean;
-};
-
-export function LoginForm({ googleEnabled }: LoginFormProps) {
+export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -61,27 +57,6 @@ export function LoginForm({ googleEnabled }: LoginFormProps) {
 
   return (
     <div className="space-y-4">
-      <button
-        type="button"
-        onClick={() => signIn("google", { callbackUrl: "/" })}
-        disabled={!googleEnabled}
-        className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        Continue with Google
-      </button>
-      {!googleEnabled && (
-        <p className="text-xs text-warning-foreground">
-          Google sign-in is not configured yet. Add `GOOGLE_CLIENT_ID` and
-          `GOOGLE_CLIENT_SECRET` in `.env.local`.
-        </p>
-      )}
-
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="h-px flex-1 bg-border" />
-        OR
-        <span className="h-px flex-1 bg-border" />
-      </div>
-
       <form className="space-y-3" onSubmit={handleCredentialsLogin}>
         <input
           type="email"

@@ -13,10 +13,6 @@ NEXTAUTH_URL=https://YOUR-PROJECT.vercel.app
 # Optional — default DB name in code is sysflow; set only to override
 # MONGODB_DB_NAME=sysflow
 
-# Google OAuth (if you use Google sign-in)
-# GOOGLE_CLIENT_ID=
-# GOOGLE_CLIENT_SECRET=
-
 # Production safety
 # AUTH_ENABLED=true
 # DEV_BYPASS_AUTH=false

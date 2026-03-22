@@ -1,26 +1,13 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
-import { ensureUserSystem, upsertGoogleUser } from "@/lib/accounts";
+import { ensureUserSystem } from "@/lib/accounts";
 import { connectToDatabase } from "@/lib/mongodb";
 import { UserModel } from "@/models/user";
-
-const isGoogleConfigured = Boolean(
-  process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
-);
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   providers: [
-    ...(isGoogleConfigured
-      ? [
-          GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID as string,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-          }),
-        ]
-      : []),
     CredentialsProvider({
       name: "Email and Password",
       credentials: {
@@ -50,27 +37,19 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user }) {
       if (!user.email) return false;
 
-      if (account?.provider === "google") {
-        await upsertGoogleUser({
-          email: user.email,
-          name: user.name ?? "SysFlow User",
-          image: user.image,
-        });
-      } else {
-        await connectToDatabase();
-        const existingUser = await UserModel.findOne({
-          email: user.email.toLowerCase(),
-        }).lean();
-        if (existingUser) {
-          await ensureUserSystem(
-            String(existingUser._id),
-            existingUser.name,
-            existingUser.email,
-          );
-        }
+      await connectToDatabase();
+      const existingUser = await UserModel.findOne({
+        email: user.email.toLowerCase(),
+      }).lean();
+      if (existingUser) {
+        await ensureUserSystem(
+          String(existingUser._id),
+          existingUser.name,
+          existingUser.email,
+        );
       }
 
       return true;
