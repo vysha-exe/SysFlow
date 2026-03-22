@@ -127,7 +127,12 @@ In Google Cloud Console → **Credentials** → your OAuth client:
 Railway/Nixpacks/Railpack will see **`backend/package.json`** and use its **`start`** and **`build`** scripts.
 
 **Option B (deploy from repo root):** Leave **Root Directory** empty or **`.`**.  
-The repo root **`package.json`** has **`build`** and **`start`** scripts that install/build **`backend/`** and run **`node backend/dist/index.js`**. **`railpack.json`** sets the same start command so **Railpack** does not fail with “No start command detected”.
+The repo root **`package.json`** has **`build`** and **`start`** scripts that install/build **`backend/`** and run **`node backend/dist/index.js`**. **`railpack.json`** and the root **`Procfile`** (`web: node backend/dist/index.js`) tell **Railpack** how to start.
+
+If Railpack still says **“No start command detected”** after a push:
+
+1. In Railway → **Deployments**, open the latest deploy and confirm the **commit hash** matches GitHub **`main`** (your changes may not have deployed yet).
+2. In **Variables**, add **`RAILPACK_START_CMD`** = **`node backend/dist/index.js`** (repo root) or **`node dist/index.js`** (if **Root Directory** is **`backend`**).
 
 ### Step 3 — Build & start
 
