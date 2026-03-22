@@ -117,7 +117,7 @@ export function SystemProfileEditor({ initial }: { initial: SystemProfileInitial
                 setSaved(false);
                 setEditing(true);
               }}
-              className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="shrink-0 rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             >
               Edit profile
             </button>
@@ -191,7 +191,7 @@ export function SystemProfileEditor({ initial }: { initial: SystemProfileInitial
                 type="text"
                 required
                 maxLength={SYSTEM_USERNAME_MAX_LEN}
-                className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground"
+                className="min-w-0 flex-1 rounded-md border border-border bg-input px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground"
                 placeholder="starlight_system"
                 value={username}
                 onChange={(e) => {
@@ -247,7 +247,7 @@ export function SystemProfileEditor({ initial }: { initial: SystemProfileInitial
               type="button"
               onClick={handleCancel}
               disabled={busy}
-              className="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+              className="rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/80 disabled:pointer-events-none disabled:opacity-50"
             >
               Cancel
             </button>

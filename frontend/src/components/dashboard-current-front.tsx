@@ -115,7 +115,7 @@ export function DashboardCurrentFront({
                       <button
                         type="button"
                         disabled={removeDisabled}
-                        className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted disabled:opacity-50"
+                        className="rounded-md border border-border bg-muted px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted/80 disabled:opacity-50"
                         onClick={() =>
                           setNoteFor({
                             intervalId: intv.id,
@@ -159,7 +159,7 @@ export function DashboardCurrentFront({
             </p>
             <button
               type="button"
-              className="mt-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+              className="mt-2 rounded-md border border-border bg-muted px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted/80"
               onClick={() =>
                 setNoteFor({
                   intervalId: emptyInterval.id,
