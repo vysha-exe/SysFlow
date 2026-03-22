@@ -40,25 +40,30 @@ Push this repository to GitHub (or GitLab / Bitbucket).
 1. Go to [vercel.com](https://vercel.com) → **Add New…** → **Project**.
 2. **Import** your `SysFlow` repository.
 
-### Step 3 — Root directory
+### Step 3 — Root directory (required — fixes `npm ci` exit 1)
 
-- Set **Root Directory** to the **repository root** (`.` / leave default **empty** / **not** `frontend`).
-- Vercel will read **`vercel.json`** at the repo root, which runs install/build inside `frontend/`.
+Set **Root Directory** to **`frontend`** (the folder that contains `package.json` and `next.config.ts`).
+
+- **Project → Settings → General → Root Directory** → `frontend` → Save.
+
+**Why:** If Root Directory is left as the repo root while install runs `cd frontend && npm ci`, that works **only** when the working directory is the monorepo root. If you instead set Root Directory to `frontend` (or Vercel resolves paths differently), `cd frontend` can point at a **missing** `frontend/frontend` folder and **`npm ci` exits with 1**. Putting the app root at **`frontend/`** matches **`frontend/vercel.json`** and runs `npm ci` in the right place.
 
 ### Step 4 — Framework
 
-- **Framework Preset:** **Next.js** (auto-detected in most cases).
+- **Framework Preset:** **Next.js** (auto-detected from `frontend/`).
 
-### Step 5 — Build commands (from root `vercel.json`)
+### Step 5 — Build commands (from `frontend/vercel.json`)
 
-These should appear automatically; if you overrode them, reset to match:
+After Root Directory is **`frontend`**, these should match (clear any old overrides in the dashboard):
 
 | Setting | Value |
 |---------|--------|
-| **Install Command** | `cd frontend && npm ci` |
-| **Build Command** | `cd frontend && npm run build` |
+| **Install Command** | `npm ci` |
+| **Build Command** | `npm run build` |
 
 Do **not** set a custom Output Directory for standard Next on Vercel.
+
+**If `npm ci` still fails:** open the deployment **Build Logs** — often the lockfile is missing from git (`frontend/package-lock.json` must be committed) or out of sync with `package.json`. Run `npm install` locally in `frontend/`, commit the updated lockfile, and push. As a last resort, set Install Command to `npm install` (less strict than `npm ci`).
 
 ### Step 6 — Environment variables
 
@@ -86,9 +91,8 @@ In Google Cloud Console → **Credentials** → your OAuth client:
 
 ### Step 8 — Fix “404 NOT_FOUND” on `*.vercel.app`
 
-1. Confirm **Root Directory** is repo root (so `vercel.json` runs `frontend` build).
-2. Open the latest deployment → **Build Logs** — build must succeed (green).
-3. Set **`NEXTAUTH_URL`** to the **same** hostname users open in the browser.
+1. Confirm **Root Directory** is **`frontend`** and the production build succeeded (green check).
+2. Set **`NEXTAUTH_URL`** to the **same** hostname users open in the browser.
 
 ---
 
@@ -149,6 +153,6 @@ See also: **`docs/deployment-env-vars.md`** (copy-paste friendly list).
 
 Config files (no ignore files added by this doc):
 
-- **`vercel.json`** (repo root) — Vercel install/build for `frontend/`
+- **`frontend/vercel.json`** — Vercel install/build when Root Directory is **`frontend`**
 - **`backend/railway.toml`** — Railway Nixpacks build/start
 - **`backend/Dockerfile`** — optional Docker deploy on Railway
