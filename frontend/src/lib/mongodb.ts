@@ -2,12 +2,21 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+/** App database name (Mongo default without a path in the URI is `test`). */
+export const SYSFLOW_DATABASE_NAME = "sysflow";
+
+const resolvedDbName =
+  process.env.MONGODB_DB_NAME?.trim() ||
+  process.env.MONGODB_DB?.trim() ||
+  SYSFLOW_DATABASE_NAME;
+
 /** Fail fast instead of hanging the browser for minutes when Mongo is down or unreachable. */
 const MONGO_OPTIONS: mongoose.ConnectOptions = {
   serverSelectionTimeoutMS: 8_000,
   connectTimeoutMS: 8_000,
   socketTimeoutMS: 45_000,
   maxPoolSize: 10,
+  dbName: resolvedDbName,
 };
 
 declare global {

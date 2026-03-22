@@ -2,75 +2,153 @@
 
 Monorepo layout:
 
-- **`frontend/`** → Vercel (Next.js)
-- **`backend/`** → Railway (Express API)
+| Path | Platform | What it is |
+|------|----------|------------|
+| **`frontend/`** | **Vercel** | Next.js app (pages, API routes, NextAuth, MongoDB via Mongoose) |
+| **`backend/`** | **Railway** (optional) | Express API (`/api/health` scaffold) |
 
-Do **not** commit real secrets. Set variables in each platform’s dashboard.
-
----
-
-## 1. Frontend — Vercel
-
-1. Push this repo to GitHub/GitLab/Bitbucket.
-2. [Vercel](https://vercel.com) → **Add New Project** → import the repo.
-3. **Root Directory:** either leave as **`.` (repository root)** — this repo includes a root **`vercel.json`** that installs and builds from **`frontend/`** — **or** set Root Directory to **`frontend`** and use default build (you can remove overrides; `frontend/vercel.json` still applies for regions).
-4. Framework preset: **Next.js**. If Vercel does not auto-detect, pick **Next.js** manually.
-
-### “404 NOT_FOUND” on `*.vercel.app`
-
-Usually the deployment **did not build the Next app** (wrong folder).
-
-1. **If Root Directory is empty or `.`:** ensure the latest **`vercel.json`** at the repo root is deployed (it runs `cd frontend && npm ci` and `cd frontend && npm run build`).
-2. **If you set Root Directory to `frontend`:** clear **Build Command** / **Install Command** overrides in Vercel (use defaults) so they are not still pointing at the repo root.
-3. Confirm the **Production deployment** succeeded (green check). A failed build can still show a generic 404.
-4. Set **`NEXTAUTH_URL`** to your exact Vercel URL, e.g. `https://your-project.vercel.app` (no trailing slash).
-5. **Environment variables** (Production + Preview as needed):
-
-   | Name | Notes |
-   |------|--------|
-   | `MONGODB_URI` | Same Atlas URI as local; include DB name, no `<` `>` in user/pass |
-   | `NEXTAUTH_SECRET` | Long random string (`openssl rand -base64 32`) |
-   | `NEXTAUTH_URL` | **Production:** `https://your-app.vercel.app` (your real domain) |
-   | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | If you use Google sign-in |
-   | `AUTH_ENABLED` | Omit or `true` in production (do **not** set `false` on public deploys unless you understand the risk) |
-
-6. After deploy, update **Google OAuth** (if used) authorized redirect URIs to  
-   `https://your-domain/api/auth/callback/google`.
-
-7. **Atlas:** Network Access → allow Vercel (often `0.0.0.0/0` for serverless, or Atlas “access from anywhere” patterns).
+The **main product** runs on **Vercel**. Deploy **Railway** only if you want the separate Express service.
 
 ---
 
-## 2. Backend — Railway
+## Security (read this)
 
-1. [Railway](https://railway.app) → **New Project** → **Deploy from GitHub** (same repo).
-2. Add a **service** from the repo → **Settings → Root Directory** = `backend`.
-3. **Build / deploy:** default **Nixpacks** reads `backend/railway.toml` (`npm install && npm run build`, then `npm start`).
-   - **Alternative:** Settings → switch builder to **Dockerfile** to use `backend/Dockerfile`.
-4. **Variables:**
-
-   | Name | Notes |
-   |------|--------|
-   | `MONGODB_URI` | Atlas connection string |
-   | `PORT` | Optional; Railway injects `PORT` automatically |
-   | `CORS_ORIGIN` | Optional; comma-separated allowed origins (e.g. `https://your-app.vercel.app`) |
-
-5. **Public URL:** generate a domain for the service; health check: `GET /api/health`.
-
-The Next.js app currently talks to **MongoDB directly** and its own `/api/*` routes. Point the frontend at this Railway URL only when you start calling the Express API from the browser.
+- **Do not commit** real secrets (`MONGODB_URI`, `NEXTAUTH_SECRET`, Google OAuth secrets, or any `.env` / `.env.local` with real values).
+- Set secrets **only** in each host’s dashboard (Vercel → Settings → Environment Variables, Railway → Variables).
+- This repo does **not** rely on ignore files for your safety—you choose what you `git add` and push.
 
 ---
 
-## 3. Git
+## MongoDB / database name
 
-- `.env`, `.env.local`, and similar are already in `.gitignore`.
-- `.vercel` is ignored so local Vercel CLI state is not committed.
+- The app uses database **`sysflow`** by default (Mongoose `dbName` in code). Create that database in Atlas (or rely on first-write to create collections).
+- **`MONGODB_URI`**: `mongodb+srv://USER:PASSWORD@cluster.mongodb.net/...?retryWrites=true&w=majority` — **no** `<` or `>` around user/password.
+- Optional override: **`MONGODB_DB_NAME`** if you need a different DB name.
+
+**Atlas:** Network Access → allow your deploy regions (many setups use `0.0.0.0/0` for serverless; tighten if you can).
 
 ---
 
-## 4. Checklist before going live
+## 1. Vercel — Next.js (`frontend/`)
 
-- [ ] Rotate any credentials that ever appeared in chat or old commits.
-- [ ] `NEXTAUTH_URL` matches the deployed URL exactly.
-- [ ] `AUTH_ENABLED` not set to `false` on production unless intentional.
-- [ ] Atlas IP / access rules allow Vercel + Railway.
+### Step 1 — Push code
+
+Push this repository to GitHub (or GitLab / Bitbucket).
+
+### Step 2 — New project
+
+1. Go to [vercel.com](https://vercel.com) → **Add New…** → **Project**.
+2. **Import** your `SysFlow` repository.
+
+### Step 3 — Root directory
+
+- Set **Root Directory** to the **repository root** (`.` / leave default **empty** / **not** `frontend`).
+- Vercel will read **`vercel.json`** at the repo root, which runs install/build inside `frontend/`.
+
+### Step 4 — Framework
+
+- **Framework Preset:** **Next.js** (auto-detected in most cases).
+
+### Step 5 — Build commands (from root `vercel.json`)
+
+These should appear automatically; if you overrode them, reset to match:
+
+| Setting | Value |
+|---------|--------|
+| **Install Command** | `cd frontend && npm ci` |
+| **Build Command** | `cd frontend && npm run build` |
+
+Do **not** set a custom Output Directory for standard Next on Vercel.
+
+### Step 6 — Environment variables
+
+Add in **Settings → Environment Variables** (at least **Production**; add **Preview** if you use preview URLs):
+
+| Variable | Required | Notes |
+|----------|----------|--------|
+| `MONGODB_URI` | Yes | Atlas SRV string |
+| `NEXTAUTH_SECRET` | Yes | e.g. `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | Yes | **Exact** public URL: `https://YOUR-PROJECT.vercel.app` (no trailing slash) |
+| `GOOGLE_CLIENT_ID` | If Google login | From Google Cloud Console |
+| `GOOGLE_CLIENT_SECRET` | If Google login | |
+| `AUTH_ENABLED` | Optional | Omit or `true` in production |
+| `DEV_BYPASS_AUTH` | Optional | Set `false` or omit in production |
+| `MONGODB_DB_NAME` | Optional | Only if not using default `sysflow` |
+
+Redeploy after changing env vars (**Deployments → … → Redeploy**).
+
+### Step 7 — Google OAuth (if used)
+
+In Google Cloud Console → **Credentials** → your OAuth client:
+
+- **Authorized JavaScript origins:** `https://YOUR-PROJECT.vercel.app`
+- **Authorized redirect URIs:** `https://YOUR-PROJECT.vercel.app/api/auth/callback/google`
+
+### Step 8 — Fix “404 NOT_FOUND” on `*.vercel.app`
+
+1. Confirm **Root Directory** is repo root (so `vercel.json` runs `frontend` build).
+2. Open the latest deployment → **Build Logs** — build must succeed (green).
+3. Set **`NEXTAUTH_URL`** to the **same** hostname users open in the browser.
+
+---
+
+## 2. Railway — Express (`backend/`)
+
+### Step 1 — New project
+
+1. [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub repo**.
+2. Select the **same** `SysFlow` repository.
+
+### Step 2 — Service root directory
+
+1. Open the **service** → **Settings**.
+2. **Root Directory** → set to **`backend`** (critical for a monorepo).
+
+### Step 3 — Build & start
+
+Railway picks up **`backend/railway.toml`**:
+
+- **Build:** `npm install && npm run build`
+- **Start:** `npm start` (runs `node dist/index.js`)
+
+**Alternative:** **Settings → Build → Builder** → **Dockerfile** → ensure the Dockerfile path is **`backend/Dockerfile`** (service root is still `backend`).
+
+### Step 4 — Variables
+
+| Variable | Notes |
+|----------|--------|
+| `MONGODB_URI` | Same Atlas URI as Vercel if this service uses Mongo |
+| `PORT` | Usually **auto-set** by Railway; optional to set manually |
+| `CORS_ORIGIN` | Optional; comma-separated browser origins, e.g. `https://YOUR-PROJECT.vercel.app` |
+
+### Step 5 — Public URL
+
+**Settings → Networking → Generate Domain**. Check:
+
+`GET https://YOUR-RAILWAY-URL.up.railway.app/api/health` → `{ "ok": true, ... }`
+
+### Note — Frontend vs Railway
+
+Today, the **Next.js** app talks to **MongoDB** and its own **`/api/*`** routes. The Railway app is a **separate** API; wire the browser to it only if you add client calls to that base URL.
+
+---
+
+## 3. Go-live checklist
+
+- [ ] No secrets committed in git history for this deploy.
+- [ ] `NEXTAUTH_URL` matches the live site URL exactly.
+- [ ] `DEV_BYPASS_AUTH` / `AUTH_ENABLED` are safe for production.
+- [ ] Atlas allows connections from Vercel (and Railway if used).
+- [ ] Google OAuth redirect URIs updated if using Google sign-in.
+
+---
+
+## 4. Quick reference
+
+See also: **`docs/deployment-env-vars.md`** (copy-paste friendly list).
+
+Config files (no ignore files added by this doc):
+
+- **`vercel.json`** (repo root) — Vercel install/build for `frontend/`
+- **`backend/railway.toml`** — Railway Nixpacks build/start
+- **`backend/Dockerfile`** — optional Docker deploy on Railway

@@ -137,4 +137,5 @@ Health check (default): `http://localhost:4000/api/health`
 
 ## Deploy
 
-See **[DEPLOY.md](./DEPLOY.md)** for **Vercel** (frontend) and **Railway** (backend): env vars, root directories, and optional Docker.
+- **[DEPLOY.md](./DEPLOY.md)** — step-by-step **Vercel** (Next.js) and **Railway** (Express), root `vercel.json`, `backend/railway.toml`, troubleshooting.  
+- **[docs/deployment-env-vars.md](./docs/deployment-env-vars.md)** — environment variable list for copy/paste into each platform.

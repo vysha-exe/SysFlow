@@ -76,14 +76,20 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async jwt({ token, user }) {
-      if (user?.email) {
-        await connectToDatabase();
-        const dbUser = await UserModel.findOne({
-          email: user.email.toLowerCase(),
-        }).lean();
-
-        if (dbUser) {
-          token.userId = String(dbUser._id);
+      // On sign-in, `user` is set; on later requests it is undefined but `token` persists.
+      if (user) {
+        if (user.email) {
+          await connectToDatabase();
+          const dbUser = await UserModel.findOne({
+            email: user.email.toLowerCase(),
+          }).lean();
+          if (dbUser) {
+            token.userId = String(dbUser._id);
+          }
+        }
+        // Credentials (and some providers) set `user.id` — use it if DB lookup missed (race, etc.)
+        if (!token.userId && user.id) {
+          token.userId = String(user.id);
         }
       }
       return token;

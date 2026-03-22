@@ -35,7 +35,11 @@ async function startServer() {
     throw new Error("Missing MONGODB_URI in backend environment variables.");
   }
 
-  await mongoose.connect(mongoUri);
+  const dbName =
+    process.env.MONGODB_DB_NAME?.trim() ||
+    process.env.MONGODB_DB?.trim() ||
+    "sysflow";
+  await mongoose.connect(mongoUri, { dbName });
 
   app.listen(port, () => {
     console.log(`Backend API running on http://localhost:${port}`);

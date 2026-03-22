@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import mongoose from "mongoose";
 import { authOptions } from "@/lib/auth-options";
 import { isAuthBypassEnabled } from "@/lib/auth-bypass";
 import { ensureUserSystem } from "@/lib/accounts";
@@ -31,5 +32,12 @@ export async function getCurrentSystem() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
 
-  return SystemModel.findOne({ ownerUserId: session.user.id }).lean();
+  let ownerId: mongoose.Types.ObjectId;
+  try {
+    ownerId = new mongoose.Types.ObjectId(session.user.id);
+  } catch {
+    return null;
+  }
+
+  return SystemModel.findOne({ ownerUserId: ownerId }).lean();
 }
