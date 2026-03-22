@@ -18,21 +18,45 @@ export function LoginForm({ googleEnabled }: LoginFormProps) {
     setError("");
     setIsLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      callbackUrl: "/",
-      redirect: false,
-    });
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        callbackUrl: "/",
+        redirect: false,
+      });
 
-    setIsLoading(false);
+      if (!result) {
+        setError(
+          "Sign-in did not return a response. On Vercel, set NEXTAUTH_URL (your site URL, no trailing slash) and NEXTAUTH_SECRET, then redeploy.",
+        );
+        return;
+      }
 
-    if (result?.error) {
-      setError("Invalid email or password.");
-      return;
+      if (result.error) {
+        // NextAuth uses CredentialsSignin for bad password; Configuration often means env (NEXTAUTH_URL / SECRET).
+        if (result.error === "CredentialsSignin") {
+          setError("Invalid email or password.");
+        } else if (result.error === "Configuration") {
+          setError(
+            "Auth configuration error. On production, set NEXTAUTH_URL to your exact site URL (https://…) and NEXTAUTH_SECRET in the host’s environment variables, then redeploy.",
+          );
+        } else {
+          setError(result.error);
+        }
+        return;
+      }
+
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        window.location.href = "/";
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sign-in failed. Try again.");
+    } finally {
+      setIsLoading(false);
     }
-
-    window.location.href = "/";
   }
 
   return (

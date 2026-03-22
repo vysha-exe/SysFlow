@@ -20,6 +20,15 @@ app.use(
 );
 app.use(express.json());
 
+/** Railway / load balancers often probe `/` — respond 200 so health checks pass. */
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "sysflow-backend",
+    hint: "Use GET /api/health for a full health payload.",
+  });
+});
+
 app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
@@ -41,8 +50,9 @@ async function startServer() {
     "sysflow";
   await mongoose.connect(mongoUri, { dbName });
 
-  app.listen(port, () => {
-    console.log(`Backend API running on http://localhost:${port}`);
+  // Bind to all interfaces so Docker / Railway can route traffic (not only 127.0.0.1).
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`Backend API listening on 0.0.0.0:${port} (PORT from env)`);
   });
 }
 

@@ -74,8 +74,8 @@ Add in **Settings → Environment Variables** (at least **Production**; add **Pr
 | Variable | Required | Notes |
 |----------|----------|--------|
 | `MONGODB_URI` | Yes | Atlas SRV string |
-| `NEXTAUTH_SECRET` | Yes | e.g. `openssl rand -base64 32` |
-| `NEXTAUTH_URL` | Yes | **Exact** public URL: `https://YOUR-PROJECT.vercel.app` (no trailing slash) |
+| `NEXTAUTH_SECRET` | Yes | e.g. `openssl rand -base64 32` — **required** for sign-in to work in production |
+| `NEXTAUTH_URL` | Yes | **Exact** public URL: `https://YOUR-PROJECT.vercel.app` (no trailing slash). Wrong/missing values often look like “nothing happens” after Sign in — cookies/JWT won’t be issued. |
 | `GOOGLE_CLIENT_ID` | If Google login | From Google Cloud Console |
 | `GOOGLE_CLIENT_SECRET` | If Google login | |
 | `AUTH_ENABLED` | Optional | Omit or `true` in production |
