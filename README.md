@@ -39,7 +39,7 @@ SysFlow is built to respect that **the user decides** what to track and how to n
 
 | Area | Description |
 |------|-------------|
-| **Accounts** | Sign up / sign in with **email & password** or **Google** (OAuth). Data is tied to a **system** workspace in MongoDB. |
+| **Accounts** | Sign up / sign in with **email & password**. Data is tied to a **system** workspace in MongoDB. |
 | **Dashboard** | **System profile** (name, username, description), **current front** with **per–headmate timers** (including co-fronting), notes on the active session, and links to other areas. |
 | **Headmates** | **Create, edit, delete** headmate profiles (Mongo-backed). Set **who is fronting** from here; manage **custom field templates** per system (API + UI integration). |
 | **Front tracking** | **Add / set / remove** who is fronting; co-fronters can run on separate timers; changes end or split **intervals** so you get an accurate **history**. |
