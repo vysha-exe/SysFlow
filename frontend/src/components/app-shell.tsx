@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
@@ -27,10 +28,21 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       )}
       <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <div>
-            <p className="text-lg font-semibold tracking-tight text-foreground">SysFlow</p>
-            <p className="text-xs text-muted-foreground">Plural system management MVP</p>
-          </div>
+          <Link
+            href="/"
+            className="shrink-0 outline-none ring-offset-background transition-opacity hover:opacity-90 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label="SysFlow — go to dashboard"
+          >
+            <Image
+              src="/sysflow-logo.png"
+              alt="SysFlow — plural management"
+              width={320}
+              height={64}
+              priority
+              className="h-9 w-auto max-h-9 max-w-[min(16rem,calc(100vw-10rem))] object-contain object-left sm:h-10 sm:max-h-10 sm:max-w-[min(18rem,calc(100vw-12rem))] md:h-11 md:max-h-11 md:max-w-[min(20rem,calc(100vw-14rem))]"
+              sizes="(max-width: 640px) min(16rem, calc(100vw - 10rem)), (max-width: 768px) min(18rem, calc(100vw - 12rem)), min(20rem, calc(100vw - 14rem))"
+            />
+          </Link>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <ThemeToggle />
             <nav className="flex flex-wrap items-center justify-end gap-1 text-sm">
